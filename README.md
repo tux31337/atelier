@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Atelier
 
-## Getting Started
+A pnpm monorepo for frontend projects. The blog is the first app; future apps share the same harness instead of one-off scaffolds.
 
-First, run the development server:
+> Korean: see [README.ko.md](./README.ko.md). Working rules live in [AGENTS.md](./AGENTS.md) and [CLAUDE.md](./CLAUDE.md).
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Stack
+
+- Next.js 16 (App Router) + React 19
+- TypeScript strict mode
+- Tailwind CSS v4 (CSS-first)
+- pnpm workspaces
+
+## Layout
+
+```txt
+apps/
+  blog/                 # primary blog app
+
+packages/
+  ui/                   # shared React components and layout primitives
+  tailwind-config/      # shared Tailwind tokens and preset
+  tsconfig/             # shared tsconfig bases
+  eslint-config/        # shared ESLint configs
+  content/              # content parsing utilities (when needed)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Status
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Transitional. The Next.js app still lives at the repo root (`app/`, `public/`, `next.config.ts`, `postcss.config.mjs`) and is being migrated into `apps/blog`. The `packages/*` directories have not been created yet, and `pnpm-workspace.yaml` does not yet declare workspace globs.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Common scripts
 
-## Learn More
+Run from the repo root:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+pnpm dev        # development server
+pnpm build      # production build
+pnpm lint       # ESLint
+pnpm typecheck  # tsc --noEmit (to be wired up)
+pnpm test       # tests (to be added)
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Conventions (short version)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Use `pnpm`. Do not introduce `npm`, `yarn`, or `bun` lockfiles.
+- Apps may import shared packages; shared packages must not import from apps.
+- Read `node_modules/next/dist/docs/` before changing Next.js routing, metadata, fonts, caching, server actions, or config — Next 16 has breaking changes versus older versions.
+- Tailwind v4 CSS-first only. Do not regress to a `tailwind.config.{js,ts}`.
+- Conventional Commits for commit messages.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See [AGENTS.md](./AGENTS.md) for the full guide.

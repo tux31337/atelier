@@ -2,6 +2,8 @@
 
 Atelier는 블로그를 시작점으로 여러 프론트엔드 프로젝트를 함께 관리하기 위한 작업 공간입니다. 처음에는 블로그를 안정적으로 만들고, 이후 필요한 웹 프로젝트들을 같은 구조 안에서 확장하는 방향을 목표로 합니다.
 
+> 영어 문서: [README.md](./README.md). 작업 규칙은 [AGENTS.md](./AGENTS.md)와 [CLAUDE.md](./CLAUDE.md)에 있습니다.
+
 ## 방향
 
 이 저장소는 pnpm 기반 모노레포로 운영할 예정입니다. 각 프로젝트는 `apps` 아래에 두고, 여러 프로젝트에서 함께 쓰는 설정과 UI 요소는 `packages` 아래에 나누어 관리합니다.
@@ -70,8 +72,8 @@ pnpm test
 
 ## 다음 작업
 
-1. 현재 설치 상태를 `pnpm i`로 먼저 정상화합니다.
-2. 루트에 있는 기존 Next.js 앱을 `apps/blog`로 이동합니다.
-3. pnpm workspace 설정을 `apps/*`, `packages/*` 기준으로 정리합니다.
-4. Tailwind CSS, TypeScript, ESLint 설정을 필요한 만큼만 공유 패키지로 분리합니다.
+1. 루트에 있는 기존 Next.js 앱을 `apps/blog`로 이동합니다 (`app/`, `public/`, `next.config.ts`, `postcss.config.mjs`, `eslint.config.mjs`, `tsconfig.json`, 관련 deps).
+2. `pnpm-workspace.yaml`에 `packages: [apps/*, packages/*]`를 선언하고, 루트 `package.json`을 워크스페이스 루트 메타데이터로 정리합니다 (이름은 `atelier`, `private: true`, 공통 스크립트 추가).
+3. Tailwind v4·TypeScript·ESLint 설정 중 실제로 반복되는 부분만 `packages/tailwind-config`·`packages/tsconfig`·`packages/eslint-config`로 분리합니다.
+4. `pnpm typecheck`(tsc --noEmit)와, 도입 시 `pnpm test` 스크립트를 루트에서 묶어 실행할 수 있도록 합니다.
 5. 블로그의 기본 레이아웃, 글 목록, 글 상세 구조를 먼저 안정화합니다.
