@@ -1,0 +1,94 @@
+---
+title: "Micro-Optimizations in the Render Loop"
+date: "2023-08-05"
+category: "Performance"
+excerpt: "Finding the 16ms window. A deep dive into garbage collection cycles in heavy JavaScript environments and how to avoid frame drops by pooling objects and offloading computations to Workers."
+tags: ["Performance", "JavaScript", "WebWorkers", "Optimization"]
+---
+
+At 60fps, each frame has a budget of 16.67ms. Miss that window and the browser can't paint a new frame in time — the display holds the previous frame and you get visible stutter. In a JavaScript environment, the biggest threat to that budget isn't slow algorithms. It's garbage collection.
+
+## The GC Tax
+
+JavaScript is garbage-collected. Every object you allocate that later goes out of scope needs to be collected. For most application code, this happens infrequently enough to be invisible. In a render loop running 60 times per second, "infrequently" doesn't exist.
+
+The canonical mistake: allocating inside `requestAnimationFrame`.
+
+```js
+// Bad: allocates a new Vec3 every frame
+function update(dt) {
+  const velocity = new Vec3(0, -9.8 * dt, 0);
+  player.position.add(velocity);
+}
+```
+
+Every call creates a new `Vec3`. At 60fps, that's 60 allocations per second per call site. When the GC runs — unpredictably, triggered by memory pressure — it needs to collect thousands of these short-lived objects, causing a frame spike measured in tens of milliseconds.
+
+<Callout title="Measure Before Optimizing">
+Profile first. Open Chrome DevTools → Performance tab → record 5 seconds of your render loop. Look for gray bars labeled "Minor GC" and "Major GC" in the Main thread lane. Only optimize allocations that you can correlate with visible frame drops.
+</Callout>
+
+## Object Pooling
+
+The fix is object pooling: pre-allocate a fixed set of objects and reuse them rather than allocating and discarding on each frame.
+
+```js
+class Vec3Pool {
+  constructor(size = 128) {
+    this._pool = Array.from({ length: size }, () => ({ x: 0, y: 0, z: 0 }));
+    this._head = 0;
+  }
+  acquire() {
+    return this._pool[this._head++ % this._pool.length];
+  }
+}
+
+const pool = new Vec3Pool(256);
+
+function update(dt) {
+  const velocity = pool.acquire();
+  velocity.x = 0;
+  velocity.y = -9.8 * dt;
+  velocity.z = 0;
+  player.position.add(velocity);
+}
+```
+
+The pool size needs to exceed the maximum number of concurrent live objects. If your render loop acquires 10 Vec3s and you have a pool of 8, you'll start returning objects that are still in use. Profile your peak allocation count and add a 50% buffer.
+
+## Offloading to Workers
+
+GC isn't the only threat to the 16ms budget. Expensive computations — physics simulation, AI pathfinding, audio analysis — can consume the main thread budget entirely.
+
+Web Workers run JavaScript on a separate OS thread. They can't access the DOM, but they can do pure computation and communicate results back to the main thread via `postMessage`.
+
+```js
+// worker.js
+self.onmessage = function({ data }) {
+  const { entities, dt } = data;
+  for (const e of entities) {
+    e.x += e.vx * dt;
+    e.y += e.vy * dt;
+  }
+  self.postMessage({ entities });
+};
+
+// main.js
+const worker = new Worker('./worker.js');
+worker.postMessage({ entities: snapshot, dt });
+worker.onmessage = ({ data }) => applySimResults(data.entities);
+```
+
+The challenge: `postMessage` serializes data via the structured clone algorithm. For large entity arrays, this serialization cost can exceed the computation savings. The solution is **SharedArrayBuffer** — a fixed-size binary buffer shared between the main thread and Worker with no serialization overhead. Requires COOP/COEP headers, but eliminates the copy entirely.
+
+## Priority: Avoid, Then Pool, Then Offload
+
+Optimize in this order:
+
+1. **Avoid** the allocation entirely — can the computation be done in-place? Can the output be cached?
+2. **Pool** short-lived objects — pre-allocate and reuse, don't GC
+3. **Offload** to Workers — move expensive work off the main thread
+
+Micro-optimization is a discipline of restraint. Every optimization has a maintenance cost: pooled objects must be manually reset before reuse, Worker state must be synchronized carefully, cached values must be invalidated correctly. Pay that cost only where profiling shows a real frame-budget violation.
+
+> "Premature optimization remains the root of all evil. Measured, deliberate optimization is the only other kind."

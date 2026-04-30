@@ -1,0 +1,59 @@
+---
+title: "The Semantics of Syntax Highlighting"
+date: "2023-07-20"
+category: "Theory"
+excerpt: "Code is read more often than it is written. We explore how color theory applied to syntax highlighting can reduce cognitive load and improve comprehension speed for complex algorithms."
+tags: ["Design", "Accessibility", "Color Theory", "Developer Experience"]
+image: "/images/posts/syntax-highlighting.jpg"
+---
+
+Every major code editor ships with a default syntax theme. Most developers pick one that feels comfortable, then never think about it again. But the choices embedded in a syntax theme — which tokens get color, which get weight, and which remain neutral — have a measurable effect on comprehension speed and cognitive load.
+
+## What Color Actually Does
+
+In syntax highlighting, color serves two functions: **categorization** and **salience**.
+
+Categorization assigns tokens to semantic groups: keywords are one color, strings another, comments a third. Salience draws the eye to tokens that carry the most information density relative to their position in the code.
+
+Most syntax themes excel at categorization. They assign colors to token types and let the editor's grammar do the grouping. Fewer themes think carefully about salience — which tokens deserve to jump out of the page, and which should recede.
+
+<Callout title="The Signal-to-Noise Problem">
+In a block of JavaScript, `const`, `let`, `return`, and `function` are structural keywords that a fluent reader recognizes instantly. Giving them the same visual weight as the identifier names they introduce competes for the reader's attention. Consider dimming syntactic scaffolding and brightening semantic content.
+</Callout>
+
+## Semantic vs. Syntactic Highlighting
+
+Traditional syntax highlighting is syntactic: it colors token types. Modern editors increasingly support **semantic highlighting**, where the language server provides type information and the editor colors tokens by their meaning in the program.
+
+The difference in practice:
+
+```typescript
+// Syntactic highlighting: all identifiers in the same color
+const loadUser = async (id: string): Promise<User> => {
+  const user = await db.users.findById(id);
+  return user;
+};
+
+// Semantic: parameters, local variables, imports, types —
+// each carries different information, each gets a distinct treatment
+```
+
+With semantic highlighting, `id` as a parameter looks different from `user` as a local variable looks different from `db` as an imported module. The visual signal matches the semantic meaning — the code communicates its structure without requiring the reader to parse it fully.
+
+## Color Selection Principles
+
+**Hue for category.** Assign distinct hues to major token categories: keywords, identifiers, literals, comments, types. Keep the hue count low — more than five hues creates noise rather than signal.
+
+**Lightness for salience.** Within a dark theme, higher lightness = more visual weight. Use high lightness (near white) for the tokens that matter most. Use low lightness (near gray) for scaffolding that fluent readers skip.
+
+**Saturation for state.** Reserve high saturation for error states and important annotations. Healthy code at rest should be relatively desaturated — bright pops of color should mean "pay attention here."
+
+## The Accessibility Dimension
+
+Roughly 8% of users have some form of color vision deficiency. A syntax theme that relies solely on hue to distinguish tokens is invisible to a meaningful fraction of its audience.
+
+The fix is simple: never use color as the only differentiator. Ensure that the contrast ratio between any two adjacent token colors is sufficient (WCAG AA: 4.5:1 for normal text), and that structural distinctions are also carried by lightness differences that survive color blindness simulation.
+
+> "Good syntax highlighting is invisible. It guides the eye without announcing itself — the information lands before the reader consciously processes how it got there."
+
+The ultimate test: take a screenshot of your theme, desaturate it entirely, and try to read the code. If the hierarchy collapses into a flat gray fog, the theme is relying too heavily on hue alone. A well-designed theme remains legible in grayscale.

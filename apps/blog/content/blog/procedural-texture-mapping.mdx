@@ -1,0 +1,76 @@
+---
+title: "Generating Coherence: Procedural Texture Mapping"
+date: "2023-09-12"
+category: "Visuals"
+excerpt: "How to maintain visual fidelity across thousands of procedurally generated entities. We look at noise-based displacement and the trade-offs of runtime shader complexity versus pre-baked assets."
+tags: ["GLSL", "Shaders", "WebGL", "Procedural Generation"]
+image: "/images/posts/procedural-texture.jpg"
+---
+
+At scale, uniqueness is a performance problem. When you need ten thousand visually distinct objects — asteroids in a space sim, tiles in a terrain system, NPCs in a crowd — the naive approach of storing individual textures for each entity quickly exhausts GPU memory. Procedural generation offers an alternative: derive visual complexity from mathematics rather than stored data.
+
+## Noise as a Creative Primitive
+
+The workhorse of procedural texturing is **Perlin noise** (and its successor, simplex noise). Unlike random white noise, Perlin noise is smooth and continuous — adjacent samples are correlated. This continuity is what makes noise useful for organic-looking surfaces: bark, stone, water, clouds.
+
+In a GLSL vertex shader, you can sample a 3D noise function using the fragment's position in object space:
+
+```glsl
+uniform float uTime;
+varying vec2 vUv;
+varying float vNoise;
+
+float permute(float x) { return mod(((x * 34.0) + 1.0) * x, 289.0); }
+
+void main() {
+  vUv = uv;
+  vec3 pos = position;
+  float n = snoise(pos.xyz * 0.5 + uTime * 0.1);
+  vNoise = n;
+  pos += normal * n * 0.8;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+}
+```
+
+The key insight: `pos += normal * n` displaces vertices along their surface normal. This produces a bumpy, organic deformation without changing the topology of the mesh.
+
+<Callout title="Tiling vs. World-Space Sampling">
+Always sample noise in **world space** or **object space**, never screen space. Screen-space sampling causes textures to "swim" as the camera moves. Object-space sampling ensures the texture stays locked to the surface regardless of viewing angle.
+</Callout>
+
+## Runtime vs. Pre-Baked
+
+The eternal trade-off in procedural texturing is computation timing.
+
+**Runtime (shader-based):**
+- Zero memory overhead for texture data
+- Infinite variety from a single shader program
+- Scales to any resolution — no pixelation on close-ups
+- CPU cost: zero. GPU cost: shader evaluation per fragment
+
+**Pre-baked (texture atlas):**
+- Fixed GPU memory cost regardless of complexity
+- No per-frame shader evaluation cost
+- Supports arbitrarily complex procedural algorithms (run offline)
+- Limited by atlas resolution and entity count
+
+For dynamic content — terrain that changes, entities with animated surface textures — runtime is often unavoidable. For static geometry at massive scale, a hybrid approach works best: generate textures offline with a complex algorithm, pack them into an atlas, and use the GPU only for final blending and variation.
+
+## Coherent Variation at Scale
+
+When you need N objects to look similar-but-distinct, parameterize the noise function by a per-instance seed:
+
+```glsl
+uniform float uSeed;  // per-instance, passed via instanced attribute
+
+void main() {
+  float n = snoise(position.xyz * 0.5 + uSeed * 13.7);
+  // ...
+}
+```
+
+By choosing seeds carefully (spaced far apart in the noise domain via the large multiplier), each instance samples a statistically independent region of the noise field. The result: visual diversity with a single shader program and zero extra texture memory.
+
+> "Procedural generation isn't about randomness. It's about controlled, structured variation derived from rules you understand and can tune."
+
+The discipline is not in the mathematics — simplex noise implementations are a few lines of GLSL. The discipline is in the parameterization: knowing which values to expose as uniforms, which to bake into the shader, and how to build an artistic pipeline around the algorithm so that designers can iterate without touching shader code.

@@ -1,0 +1,59 @@
+---
+title: "The Physics of Interpolation: Beyond Linear Ease"
+date: "2023-10-24"
+category: "Architecture"
+excerpt: "In UI development, motion often feels sterile when strictly linear. By implementing spring-based physics and understanding the mass-damper system, we can create interfaces that feel tactile and responsive to human intent."
+tags: ["Animation", "Physics", "Motion", "JavaScript"]
+featured: true
+---
+
+Linear easing is a lie we tell ourselves. The real world doesn't move at constant velocity — objects have mass, they resist change, they overshoot and settle. When we apply strict `linear` or even `ease-in-out` timing to UI transitions, we're discarding the physical intuition users carry from years of interacting with the physical world.
+
+## Why Springs Beat Cubic Béziers
+
+Cubic Bézier curves, the backbone of CSS `transition-timing-function`, give us four control points to define a curve from 0 to 1. They're elegant. They're predictable. They're also fundamentally wrong for interactive animations.
+
+The problem: a Bézier curve has a fixed duration. You define the start, the end, and the shape of the path in between. But when a user grabs an element mid-animation — a swipe they cancel, a menu they close before it opens — the animation needs to react immediately. With Bézier curves, you get a jarring cut to a new curve.
+
+Springs don't have a duration. They have **mass**, **stiffness**, and **damping**. The simulation runs forward in time until the displacement is negligible. Interrupt a spring? You get a new spring initialized with the current velocity — which is exactly what a real physical object would do.
+
+<Callout title="The Mass-Damper System">
+In a spring simulation, stiffness controls how aggressively the spring pulls toward its target. Damping controls how quickly oscillation decays. The ratio between them determines whether your animation **underdamps** (bounces), **critically damps** (settles in minimum time), or **overdamps** (creeps to the target).
+</Callout>
+
+## Implementing a Spring in JavaScript
+
+The spring equation isn't complicated. At each frame, you calculate the force exerted on the simulated object and integrate that force into velocity, then into position.
+
+```js
+function springStep({ stiffness, damping, mass }, state, dt) {
+  const force = -stiffness * state.displacement - damping * state.velocity;
+  const acceleration = force / mass;
+  const velocity = state.velocity + acceleration * dt;
+  const displacement = state.displacement + velocity * dt;
+  return { velocity, displacement };
+}
+```
+
+The `dt` (delta time) is the elapsed time since the last frame in seconds. Using `requestAnimationFrame` and `performance.now()`, you can drive this at 60fps with real elapsed time, meaning the animation self-corrects if frames drop.
+
+## Practical Configuration
+
+Three presets cover 90% of UI interactions:
+
+**Snappy** — for immediate feedback: tooltips, selection highlights
+`stiffness: 400, damping: 26, mass: 1`
+
+**Default** — for navigation, modal entrances
+`stiffness: 170, damping: 26, mass: 1`
+
+**Gentle** — for background elements, parallax
+`stiffness: 100, damping: 20, mass: 1`
+
+## The Velocity Handoff
+
+The real power of springs emerges in the velocity handoff. When you interrupt an ongoing transition, capture the current velocity and pass it as the initial velocity of the new spring. The result is motion that respects momentum — the interface behaves as if it has genuine inertia.
+
+> "The goal of motion design is not to show the user what's happening. It's to make the user feel like they caused it to happen."
+
+Libraries like [Framer Motion](https://www.framer.com/motion/) and [React Spring](https://react-spring.dev/) abstract this into a clean API, but understanding the physics underneath lets you debug unexpected oscillations and tune configurations with intention rather than trial and error.
