@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Newsreader:opsz,ital,wght@6..72,0,400;6..72,1,400&amp;family=Space+Grotesk:wght@300;400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline-variant": "#46464a",
+                        "on-secondary": "#283500",
+                        "secondary": "#ffffff",
+                        "on-error-container": "#ffdad6",
+                        "surface-bright": "#39393c",
+                        "secondary-fixed-dim": "#abd600",
+                        "primary-container": "#0a0a0b",
+                        "surface-dim": "#131316",
+                        "on-primary": "#313031",
+                        "inverse-primary": "#5f5e5f",
+                        "inverse-on-surface": "#303033",
+                        "error-container": "#93000a",
+                        "surface": "#131316",
+                        "on-tertiary-fixed": "#270057",
+                        "surface-container-lowest": "#0e0e11",
+                        "primary-fixed-dim": "#c8c6c7",
+                        "on-secondary-fixed-variant": "#3c4d00",
+                        "tertiary": "#d5baff",
+                        "on-surface-variant": "#c7c6ca",
+                        "surface-container": "#1f1f22",
+                        "primary": "#c8c6c7",
+                        "on-secondary-container": "#556d00",
+                        "surface-container-high": "#2a2a2d",
+                        "secondary-container": "#c3f400",
+                        "on-background": "#e4e1e5",
+                        "on-error": "#690005",
+                        "tertiary-container": "#11002d",
+                        "surface-container-highest": "#353438",
+                        "on-tertiary": "#410587",
+                        "inverse-surface": "#e4e1e5",
+                        "on-primary-fixed": "#1c1b1c",
+                        "secondary-fixed": "#c3f400",
+                        "on-secondary-fixed": "#161e00",
+                        "background": "#131316",
+                        "tertiary-fixed": "#ecdcff",
+                        "on-primary-container": "#7a797a",
+                        "surface-tint": "#c8c6c7",
+                        "on-tertiary-container": "#8e62d6",
+                        "on-tertiary-fixed-variant": "#592a9e",
+                        "surface-variant": "#353438",
+                        "tertiary-fixed-dim": "#d5baff",
+                        "on-primary-fixed-variant": "#474647",
+                        "error": "#ffb4ab",
+                        "surface-container-low": "#1b1b1e",
+                        "primary-fixed": "#e5e2e3",
+                        "on-surface": "#e4e1e5",
+                        "outline": "#919094"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "max-width-layout": "1440px",
+                        "max-width-content": "720px",
+                        "margin-safe": "40px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "blog-content": ["Newsreader"],
+                        "headline-lg": ["Space Grotesk"],
+                        "display-xl": ["Space Grotesk"],
+                        "body-md": ["Inter"],
+                        "code-label": ["Space Grotesk"]
+                    },
+                    "fontSize": {
+                        "blog-content": ["20px", {"lineHeight": "1.7", "letterSpacing": "0.01em", "fontWeight": "400"}],
+                        "headline-lg": ["40px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "display-xl": ["80px", {"lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "1.6", "letterSpacing": "0", "fontWeight": "400"}],
+                        "code-label": ["14px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "500"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-border {
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .rim-light {
+            box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.05);
+        }
+        .code-block {
+            background-color: #050506;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md">
+<!-- TopNavBar -->
+<header class="bg-[#0A0A0B]/80 backdrop-blur-xl text-zinc-100 docked full-width top-0 sticky border-b border-white/10 shadow-[0_0_20px_rgba(0,0,0,0.5)] z-50">
+<nav class="flex justify-between items-center w-full px-6 py-4 max-w-7xl mx-auto">
+<div class="text-xl font-black tracking-tighter text-zinc-100 font-['Space_Grotesk']">
+                Dev_Studio
+            </div>
+<div class="hidden md:flex items-center gap-8">
+<a class="font-['Space_Grotesk'] tracking-tight text-sm uppercase font-bold text-white border-b-2 border-white pb-1" href="#">Projects</a>
+<a class="font-['Space_Grotesk'] tracking-tight text-sm uppercase font-bold text-zinc-500 hover:text-zinc-200 transition-colors" href="#">Blog</a>
+<a class="font-['Space_Grotesk'] tracking-tight text-sm uppercase font-bold text-zinc-500 hover:text-zinc-200 transition-colors" href="#">Archive</a>
+<a class="font-['Space_Grotesk'] tracking-tight text-sm uppercase font-bold text-zinc-500 hover:text-zinc-200 transition-colors" href="#">About</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-zinc-100 hover:bg-white/5 p-2 rounded-full transition-all duration-300 active:scale-90">terminal</button>
+<div class="w-8 h-8 rounded-full bg-surface-container overflow-hidden border border-white/10">
+<img alt="3D Mascot Avatar" class="w-full h-full object-cover" data-alt="close up of a stylized 3D rendered character head with soft lighting and neutral expression" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvueQtNBRWo_X6AJ9VskytTRpjTENaBOtVBX8-yFXQkhe54WRbqGuIYxd1TEYHIeWlaJDj1ocQ0fYFnXaPZi71JXAJ3FId-nxW_DECzrWl6zCGq65-H-LEuCBZz4NwadWkxLukqm9DoEkzioYxNZV_itNsLeacXmoNDRvARSr2zXPD26HbW1xJpDZ6bRRXE_UY6V61tco1dcW_b3fJyl28nCmIZkP3mR0uD5sn9xVQpMI1dzhtW96Y1Mju3KEXrAaLqGweSjTbXBI"/>
+</div>
+</div>
+</nav>
+</header>
+<main>
+<!-- Hero Section -->
+<section class="relative h-[870px] w-full overflow-hidden flex items-end pb-32">
+<div class="absolute inset-0 z-0">
+<img alt="NEURAL_ARCH_V2 Cover" class="w-full h-full object-cover opacity-60" data-alt="cinematic abstract architectural lines in monochrome with sharp perspectives and dramatic lighting against a dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAvQ3IkFm77KoPT9CfXD2y8W98mRgCgRgNs7c4rYyPc49DaRteVyc7Q5hd_U_RwGCPXjTnXbo0j-HEt3uXK3S4Al2rAeQfsNS5AOs0QGO9PIlYp1LosXMw9Wl_KeZoz1bfnWo7dCQuy-5xMnJCsc-H4RJBqwTGpdtyfEY58NVaeXwRFJpPuI7uHm0LavllbGRppzQnJPqAdgtUZ3hwcaMLaaF0cEzdgAy1c1paMlrTvBXnyDGRQ7kocjPl5ecZhDtGJfj7rhUY7uEQ"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent"></div>
+</div>
+<div class="relative z-10 max-w-7xl mx-auto px-6 w-full">
+<div class="max-w-4xl">
+<span class="font-code-label text-code-label text-secondary mb-4 block tracking-widest">PROJECT_CASE_042</span>
+<h1 class="font-display-xl text-display-xl text-on-background mb-6 uppercase">NEURAL_ARCH_V2</h1>
+<p class="font-headline-lg text-headline-lg text-on-surface-variant max-w-2xl">A generative design system exploring the intersection of algorithmic precision and architectural brutalism.</p>
+</div>
+</div>
+</section>
+<!-- Project Metadata -->
+<section class="border-y border-white/5 bg-surface-container-lowest">
+<div class="max-w-7xl mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-4 gap-8">
+<div>
+<h3 class="font-code-label text-code-label text-on-primary-container uppercase mb-3">Role</h3>
+<p class="font-body-md text-body-md text-on-surface">Lead Technical Architect &amp; UI/UX Designer</p>
+</div>
+<div>
+<h3 class="font-code-label text-code-label text-on-primary-container uppercase mb-3">Timeline</h3>
+<p class="font-body-md text-body-md text-on-surface">14 Weeks (Q1 2024)</p>
+</div>
+<div class="col-span-2">
+<h3 class="font-code-label text-code-label text-on-primary-container uppercase mb-3">Tech Stack</h3>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 bg-surface-container-high glass-border rounded-full text-xs font-medium text-secondary">React 18</span>
+<span class="px-3 py-1 bg-surface-container-high glass-border rounded-full text-xs font-medium text-secondary">Three.js</span>
+<span class="px-3 py-1 bg-surface-container-high glass-border rounded-full text-xs font-medium text-secondary">GLSL Shaders</span>
+<span class="px-3 py-1 bg-surface-container-high glass-border rounded-full text-xs font-medium text-secondary">Tauri</span>
+<span class="px-3 py-1 bg-surface-container-high glass-border rounded-full text-xs font-medium text-secondary">WebGPU</span>
+</div>
+</div>
+</div>
+</section>
+<!-- The Challenge -->
+<section class="py-24 max-w-7xl mx-auto px-6">
+<div class="grid md:grid-cols-2 gap-16 items-center">
+<div class="max-w-[max-width-content]">
+<h2 class="font-headline-lg text-headline-lg text-on-background mb-8">The Challenge</h2>
+<p class="font-blog-content text-blog-content text-on-surface-variant mb-6 italic">
+                        "How can we translate pure mathematical noise into structurally viable, aesthetically compelling architectural forms in real-time?"
+                    </p>
+<p class="font-body-md text-body-md text-on-surface">
+                        The primary hurdle was performance. Rendering thousands of unique geometric meshes while maintaining 60FPS on a mobile device required a complete rethink of traditional vertex manipulation. We needed a bridge between the browser's GPU limitations and the complexity of procedural generation.
+                    </p>
+</div>
+<div class="rounded-xl overflow-hidden glass-border shadow-2xl">
+<img alt="Code on Laptop" class="w-full h-full object-cover" data-alt="professional workspace featuring a dark laptop screen filled with colorful high-contrast code snippets and terminal windows" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCfnozH7zLKv3_PTxxfqWkwqPpJ5PVQhA1Y0eEyWNEv-sx8MGRqa6nf-treCnWS9Ifgi8sQdWSp2_ueRTAPQu8eC9FnentVWzaTfW0_3qEEoktfgT6XeOc6HBXJyTVPEuOlEZrQkMq44rB-P1Fw5AFEtm6J0ZZoXdQm9HKY3bAnMNW633TR_1XVOJFK4F592f5xSipiIpzRPzEAAb14K07XpaqotHmBe3d-6h_c819KTyPegr4YQMxG4soqa5TzaKmTjCdoJo2o2dk"/>
+</div>
+</div>
+</section>
+<!-- The Solution -->
+<section class="bg-surface-container-low py-24">
+<div class="max-w-[720px] mx-auto px-6">
+<h2 class="font-headline-lg text-headline-lg text-on-background mb-8 text-center">The Solution</h2>
+<p class="font-body-md text-body-md text-on-surface mb-12 text-center">
+                    We moved the heavy lifting to the GPU using custom GLSL shaders. By utilizing instanced rendering and vertex displacement textures, we achieved a 400% increase in polygon throughput.
+                </p>
+<div class="code-block rounded-xl p-6 font-mono text-sm leading-relaxed overflow-x-auto rim-light">
+<div class="flex items-center gap-2 mb-4 border-b border-white/10 pb-2">
+<div class="w-3 h-3 rounded-full bg-error"></div>
+<div class="w-3 h-3 rounded-full bg-secondary-container"></div>
+<div class="w-3 h-3 rounded-full bg-tertiary"></div>
+<span class="ml-4 font-code-label text-on-primary-container text-[10px] uppercase">displacement_shader.glsl</span>
+</div>
+<pre class="text-zinc-300"><code><span class="text-tertiary">uniform</span> <span class="text-secondary">float</span> uTime;
+<span class="text-tertiary">varying</span> <span class="text-secondary">vec2</span> vUv;
+
+<span class="text-secondary">void</span> <span class="text-on-secondary-container">main</span>() {
+  vUv = uv;
+  <span class="text-secondary">vec3</span> pos = position;
+  <span class="text-secondary">float</span> noise = <span class="text-on-tertiary-container">pnoise</span>(pos.xyz * <span class="text-secondary">0.5</span> + uTime, <span class="text-secondary">vec3</span>(<span class="text-secondary">10.0</span>));
+  pos += normal * noise * <span class="text-secondary">2.1</span>;
+  gl_Position = projectionMatrix * modelViewMatrix * <span class="text-secondary">vec4</span>(pos, <span class="text-secondary">1.0</span>);
+}</code></pre>
+</div>
+</div>
+</section>
+<!-- The Results (Bento Grid) -->
+<section class="py-24 max-w-7xl mx-auto px-6">
+<h2 class="font-headline-lg text-headline-lg text-on-background mb-12">The Results</h2>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6 h-auto md:h-[800px]">
+<div class="md:col-span-8 md:row-span-2 group relative overflow-hidden rounded-xl glass-border">
+<img alt="Render 1" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="ultra modern skyscraper facade with metallic finishes and sharp geometric patterns under a cloudy sky" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQxudLLqqSVzBoPPdic1J_RPawdNmXfgRQE_7UarbP48USOr_acH4vD_HoOGQWUYb9K_oX8SfUwOR8tiRE9P8z12Lik6YzCLk4JymAO9RUSlMurX-Phlut7C-CD1x1NW5n1Ia7grRSGD-TW4MfPf8wWRFJzqfQlfQ9KA5XpxV5XUFCV46Ru-NkVm6jnyaRkNYDMpkwx7iDtddYMZrJldV3wiO24UYJYm22_4Oo7xNkSGXPFcq_kosfkuGRQrup5YaU9NNson6a0tk"/>
+<div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-8">
+<span class="text-white font-code-label uppercase tracking-widest">Iterative Mesh Generation</span>
+</div>
+</div>
+<div class="md:col-span-4 group relative overflow-hidden rounded-xl glass-border">
+<img alt="Render 2" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="interior view of a futuristic minimalist office with glowing led accents and concrete walls" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPkS8Qho5wykfjv35PBV1nGQ5iIdKCen2EHkAKspM61pXSZMG5fnYboDV7Cins9o_HQCBTEj6ZBMYk3r5LDjK4y7-N1dFW10f1lmf8NA6DtlM58aHAEE-4rvxPgIHBbWQHJIddbKLwOkbtf5fAPj3UoQXtF4fV5OZ5mOknHlsKVRhMUBz1A66TD4TT-RyJYJ30kG-aZQj8ikbsDvnnueaTXeFESs0eL80sJ_b2VywS6LUAunlUZOePd3zQcNFSBGuUWzk1m-MCBAY"/>
+</div>
+<div class="md:col-span-4 group relative overflow-hidden rounded-xl glass-border">
+<img alt="Render 3" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="low angle shot of futuristic brutalist architecture with modular pods and dramatic light rays" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBipE4EfHNGX10NxYDdS5NXMiUoJOTA7Ck7ij6olCRhgTPehxErgvpoa1tFo4toraDCbsBTSYHK4RQsctZiYL9km_tRkocDkhtr540Nkd_KfSXF8isChFjcpm6ILd3v3FJ6NINj50g8dAGu1CB8NLpFHJrEpJgRH61valCu8Fvc69rBYYxqkNfl0zRkZJMmq1LAraMwG7eWXhd54useQP_ghdRvv9ZRgQZZ0vkcxA3__ahViy1x5PN-9d27SDKj4Be_eAcSfnjP4v4"/>
+</div>
+</div>
+</section>
+<!-- Call to Action -->
+<section class="pb-32 pt-12 max-w-7xl mx-auto px-6">
+<div class="flex flex-col md:flex-row gap-6 justify-center items-center">
+<a class="w-full md:w-auto px-12 py-5 bg-secondary text-on-secondary font-code-label uppercase tracking-widest text-center rounded-lg hover:bg-on-secondary-container hover:text-white transition-all duration-300 transform hover:-translate-y-1 rim-light" href="#">
+                    Live Demo
+                </a>
+<a class="w-full md:w-auto px-12 py-5 border border-white/20 text-white font-code-label uppercase tracking-widest text-center rounded-lg hover:bg-white/5 transition-all duration-300 transform hover:-translate-y-1" href="#">
+                    Github Repository
+                </a>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-[#0A0A0B] full-width py-12 border-t border-white/5 flat no shadows">
+<div class="flex flex-col md:flex-row justify-between items-center gap-6 px-8 max-w-7xl mx-auto">
+<p class="font-['Space_Grotesk'] text-xs tracking-widest uppercase text-zinc-400">
+                © 2024 Creative Developer. Built with Precision.
+            </p>
+<div class="flex gap-8">
+<a class="font-['Space_Grotesk'] text-xs tracking-widest uppercase text-zinc-600 hover:text-zinc-100 underline decoration-zinc-700 underline-offset-4 opacity-80 hover:opacity-100 transition-all" href="#">Source</a>
+<a class="font-['Space_Grotesk'] text-xs tracking-widest uppercase text-zinc-600 hover:text-zinc-100 underline decoration-zinc-700 underline-offset-4 opacity-80 hover:opacity-100 transition-all" href="#">Connect</a>
+<a class="font-['Space_Grotesk'] text-xs tracking-widest uppercase text-zinc-600 hover:text-zinc-100 underline decoration-zinc-700 underline-offset-4 opacity-80 hover:opacity-100 transition-all" href="#">Status</a>
+</div>
+</div>
+</footer>
+</body></html>

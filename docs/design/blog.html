@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@400;500&amp;family=Newsreader:ital,wght@0,400;0,600;1,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    body {
+      background-color: #131316;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .rim-light:hover {
+      box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.05), 0 0 20px rgba(0, 0, 0, 0.3);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+  </style>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "outline-variant": "#46464a",
+            "on-secondary": "#283500",
+            "secondary": "#ffffff",
+            "on-error-container": "#ffdad6",
+            "surface-bright": "#39393c",
+            "secondary-fixed-dim": "#abd600",
+            "primary-container": "#0a0a0b",
+            "surface-dim": "#131316",
+            "on-primary": "#313031",
+            "inverse-primary": "#5f5e5f",
+            "inverse-on-surface": "#303033",
+            "error-container": "#93000a",
+            "surface": "#131316",
+            "on-tertiary-fixed": "#270057",
+            "surface-container-lowest": "#0e0e11",
+            "primary-fixed-dim": "#c8c6c7",
+            "on-secondary-fixed-variant": "#3c4d00",
+            "tertiary": "#d5baff",
+            "on-surface-variant": "#c7c6ca",
+            "surface-container": "#1f1f22",
+            "primary": "#c8c6c7",
+            "on-secondary-container": "#556d00",
+            "surface-container-high": "#2a2a2d",
+            "secondary-container": "#c3f400",
+            "on-background": "#e4e1e5",
+            "on-error": "#690005",
+            "tertiary-container": "#11002d",
+            "surface-container-highest": "#353438",
+            "on-tertiary": "#410587",
+            "inverse-surface": "#e4e1e5",
+            "on-primary-fixed": "#1c1b1c",
+            "secondary-fixed": "#c3f400",
+            "on-secondary-fixed": "#161e00",
+            "background": "#131316",
+            "tertiary-fixed": "#ecdcff",
+            "on-primary-container": "#7a797a",
+            "surface-tint": "#c8c6c7",
+            "on-tertiary-container": "#8e62d6",
+            "on-tertiary-fixed-variant": "#592a9e",
+            "surface-variant": "#353438",
+            "tertiary-fixed-dim": "#d5baff",
+            "on-primary-fixed-variant": "#474647",
+            "error": "#ffb4ab",
+            "surface-container-low": "#1b1b1e",
+            "primary-fixed": "#e5e2e3",
+            "on-surface": "#e4e1e5",
+            "outline": "#919094"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "fontFamily": {
+            "blog-content": ["Newsreader"],
+            "headline-lg": ["Space Grotesk"],
+            "display-xl": ["Space Grotesk"],
+            "body-md": ["Inter"],
+            "code-label": ["Space Grotesk"]
+          },
+          "fontSize": {
+            "blog-content": ["20px", {"lineHeight": "1.7", "letterSpacing": "0.01em", "fontWeight": "400"}],
+            "headline-lg": ["40px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+            "display-xl": ["80px", {"lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "700"}],
+            "body-md": ["16px", {"lineHeight": "1.6", "letterSpacing": "0", "fontWeight": "400"}],
+            "code-label": ["14px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "500"}]
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-background text-on-surface selection:bg-secondary selection:text-on-secondary">
+<!-- TopNavBar Implementation from JSON -->
+<nav class="bg-[#0A0A0B]/80 backdrop-blur-xl border-b border-white/10 shadow-[0_0_20px_rgba(0,0,0,0.5)] docked full-width top-0 sticky z-50">
+<div class="flex justify-between items-center w-full px-6 py-4 max-w-7xl mx-auto">
+<div class="text-xl font-black tracking-tighter text-zinc-100">Dev_Studio</div>
+<div class="hidden md:flex items-center space-x-8">
+<a class="font-['Space_Grotesk'] tracking-tight text-sm uppercase font-bold text-zinc-500 hover:text-zinc-200 transition-colors" href="#">Projects</a>
+<a class="font-['Space_Grotesk'] tracking-tight text-sm uppercase font-bold text-white border-b-2 border-white pb-1" href="#">Blog</a>
+<a class="font-['Space_Grotesk'] tracking-tight text-sm uppercase font-bold text-zinc-500 hover:text-zinc-200 transition-colors" href="#">Archive</a>
+<a class="font-['Space_Grotesk'] tracking-tight text-sm uppercase font-bold text-zinc-500 hover:text-zinc-200 transition-colors" href="#">About</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-zinc-100 scale-95 active:scale-90 duration-200">terminal</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-white/20">
+<img alt="3D Mascot Avatar" data-alt="A stylized 3D avatar with a modern tech aesthetic, vibrant colors, and soft studio lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAUzwL5EHGeXIvB6tA7sCy1KO-tz_m5Qg73lu4rUoDOn80MrBYUkjw9XMRKW82a4BCwgkQm4CD6UOPYKwBfOmg53fPl4SJb2mCf3Q7323d-YhxpOUXk2nwgTtsilANWNhOxK0MZP4GibXw1nBnPHozCz30e_LT9Y8DKVK3yToHk__Ymo5uefp6k6WPhQl6jN-hJDWmNxDAMfybpRMJHYFOJskT5x72mn3EiVbuWEee7l-7iH-wUM9if58iANKPBktvEdBoRf99p3kc"/>
+</div>
+</div>
+</div>
+</nav>
+<main class="max-w-[720px] mx-auto px-6 py-20 lg:py-32">
+<!-- Header Section -->
+<header class="mb-24 space-y-6">
+<h1 class="font-display-xl text-display-xl text-on-surface max-w-[600px]">
+        Journal of Kinetic Code
+      </h1>
+<p class="font-blog-content text-blog-content text-on-surface-variant max-w-[580px] italic">
+        Explorations at the intersection of rigorous systems architecture and fluid visual storytelling. Documenting the process of making code move.
+      </p>
+</header>
+<!-- Blog Posts List -->
+<section class="space-y-32">
+<!-- Post 1 -->
+<article class="group relative">
+<div class="flex flex-col gap-6">
+<div class="flex items-center gap-4 font-code-label text-code-label uppercase tracking-widest text-on-tertiary-container">
+<span>Oct 24, 2023</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span>Architecture</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface group-hover:text-secondary transition-colors duration-300">
+            The Physics of Interpolation: Beyond Linear Ease
+          </h2>
+<p class="font-blog-content text-blog-content text-on-surface-variant line-clamp-3">
+            In UI development, motion often feels sterile when strictly linear. By implementing spring-based physics and understanding the mass-damper system, we can create interfaces that feel tactile and responsive to human intent.
+          </p>
+<div class="pt-2">
+<a class="inline-flex items-center gap-2 font-code-label text-code-label uppercase border-b border-secondary/30 pb-1 text-secondary hover:border-secondary transition-all" href="#">
+              Read Full Post
+              <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</a>
+</div>
+</div>
+</article>
+<!-- Post 2 with Image -->
+<article class="group relative">
+<div class="flex flex-col gap-8">
+<div class="w-full aspect-[21/9] overflow-hidden rounded-xl glass-card border border-white/5">
+<img alt="Minimalist Abstract" class="w-full h-full object-cover opacity-60 grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700" data-alt="Minimalist abstract 3D geometric shapes in a dark void with sharp rim lighting and deep purple accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXzIth1-aQ5NLcCE1c2mlZ_xfSMPjdwWulq0uvgpc5Hi7xBzNXntXpaB2MJK_tmjh1Y2VsYs3HfyqVGVpwAgJsqPWH9d-5Zhx4gLb3KTLJ9opHHQYlGHuyIZ0kSka8cBE19dbzE2n6KjMHwduOFsCITzMRfblMBGGCmK9C8AkeNGomCALBUVIrTcFAHvZ6omZBjhyUXhExwERd-Cf-vKi0BW66Z6UyZJM5A-7VTnl3_MFc3nNDqB35xurb03EBleIScq5zu0m5Z3Y"/>
+</div>
+<div class="flex flex-col gap-6">
+<div class="flex items-center gap-4 font-code-label text-code-label uppercase tracking-widest text-on-tertiary-container">
+<span>Sep 12, 2023</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span>Visuals</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface group-hover:text-secondary transition-colors duration-300">
+              Generating Coherence: Procedural Texture Mapping
+            </h2>
+<p class="font-blog-content text-blog-content text-on-surface-variant line-clamp-3">
+              How to maintain visual fidelity across thousands of procedurally generated entities. We look at noise-based displacement and the trade-offs of runtime shader complexity versus pre-baked assets.
+            </p>
+<div class="pt-2">
+<a class="inline-flex items-center gap-2 font-code-label text-code-label uppercase border-b border-secondary/30 pb-1 text-secondary hover:border-secondary transition-all" href="#">
+                Read Full Post
+                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</a>
+</div>
+</div>
+</div>
+</article>
+<!-- Post 3 -->
+<article class="group relative">
+<div class="flex flex-col gap-6">
+<div class="flex items-center gap-4 font-code-label text-code-label uppercase tracking-widest text-on-tertiary-container">
+<span>Aug 05, 2023</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span>Performance</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface group-hover:text-secondary transition-colors duration-300">
+            Micro-Optimizations in the Render Loop
+          </h2>
+<p class="font-blog-content text-blog-content text-on-surface-variant line-clamp-3">
+            Finding the 16ms window. A deep dive into garbage collection cycles in heavy JavaScript environments and how to avoid frame drops by pooling objects and offloading computations to Workers.
+          </p>
+<div class="pt-2">
+<a class="inline-flex items-center gap-2 font-code-label text-code-label uppercase border-b border-secondary/30 pb-1 text-secondary hover:border-secondary transition-all" href="#">
+              Read Full Post
+              <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</a>
+</div>
+</div>
+</article>
+<!-- Post 4 with Image -->
+<article class="group relative">
+<div class="flex flex-col gap-8">
+<div class="w-full aspect-[21/9] overflow-hidden rounded-xl glass-card border border-white/5">
+<img alt="Cyberpunk Detail" class="w-full h-full object-cover opacity-60 grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700" data-alt="Extreme close up of futuristic circuit patterns with thin cyan lines glowing on a dark metallic surface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUY6e7-fNWyzPyStjvYar_QNMe5eiQz4EzlAyEOUpfJzqHXj2lLgOHNK4oqNPWp_vsgJWPK_-qZJ2MhY7A4ClN5MaML-IWx5ywKKAwqlC6zdadpt6IGwEktWZSg27MaIGGyxTX_bFqCqDVB-y6dONp1Nby8OP8Q50A3QcFLyhmCwncPy4SHV8v2WGpgbZYSGR7pjNyeJWQmhcgdmXV2lN180lALwwBfxUvlgm3jiPL9nSccWOUdvdNaWC1o4mUySkrdCMRNQYNRAg"/>
+</div>
+<div class="flex flex-col gap-6">
+<div class="flex items-center gap-4 font-code-label text-code-label uppercase tracking-widest text-on-tertiary-container">
+<span>Jul 20, 2023</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span>Theory</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface group-hover:text-secondary transition-colors duration-300">
+              The Semantics of Syntax Highlighting
+            </h2>
+<p class="font-blog-content text-blog-content text-on-surface-variant line-clamp-3">
+              Code is read more often than it is written. We explore how color theory applied to syntax highlighting can reduce cognitive load and improve comprehension speed for complex algorithms.
+            </p>
+<div class="pt-2">
+<a class="inline-flex items-center gap-2 font-code-label text-code-label uppercase border-b border-secondary/30 pb-1 text-secondary hover:border-secondary transition-all" href="#">
+                Read Full Post
+                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</a>
+</div>
+</div>
+</div>
+</article>
+</section>
+<!-- Pagination -->
+<div class="mt-32 pt-12 border-t border-white/5 flex justify-between items-center">
+<button class="font-code-label text-code-label uppercase text-zinc-500 hover:text-zinc-100 transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">west</span>
+        Newer
+      </button>
+<div class="font-code-label text-code-label text-zinc-600">Page 01 / 04</div>
+<button class="font-code-label text-code-label uppercase text-zinc-100 hover:text-zinc-300 transition-colors flex items-center gap-2">
+        Older
+        <span class="material-symbols-outlined text-sm">east</span>
+</button>
+</div>
+</main>
+<!-- Footer Implementation from JSON -->
+<footer class="bg-[#0A0A0B] border-t border-white/5 full-width py-12">
+<div class="flex flex-col md:flex-row justify-between items-center gap-6 px-8 max-w-7xl mx-auto">
+<div class="font-['Space_Grotesk'] text-xs tracking-widest uppercase text-zinc-400">
+        © 2024 Creative Developer. Built with Precision.
+      </div>
+<div class="flex gap-8">
+<a class="font-['Space_Grotesk'] text-xs tracking-widest uppercase text-zinc-600 hover:text-zinc-100 underline decoration-zinc-700 underline-offset-4 opacity-80 hover:opacity-100 transition-all" href="#">Source</a>
+<a class="font-['Space_Grotesk'] text-xs tracking-widest uppercase text-zinc-600 hover:text-zinc-100 underline decoration-zinc-700 underline-offset-4 opacity-80 hover:opacity-100 transition-all" href="#">Connect</a>
+<a class="font-['Space_Grotesk'] text-xs tracking-widest uppercase text-zinc-600 hover:text-zinc-100 underline decoration-zinc-700 underline-offset-4 opacity-80 hover:opacity-100 transition-all" href="#">Status</a>
+</div>
+</div>
+</footer>
+</body></html>

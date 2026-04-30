@@ -4,9 +4,9 @@
   "private": true,
   "packageManager": "pnpm@9.0.0",
   "scripts": {
-    "dev": "pnpm -F blog dev",
+    "dev": "pnpm -F @atelier/blog dev",
     "build": "pnpm -r build",
-    "start": "pnpm -F blog start",
+    "start": "pnpm -F @atelier/blog start",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck"
   }
