@@ -1,0 +1,442 @@
+packages/eslint-config 이해 정리
+
+핵심부터 정리
+
+packages/eslint-config는 여러 앱에서 같은 ESLint 규칙을 재사용하기 위한 공통 설정 패키지다.
+
+ESLint는 코드를 실행하기 전에 문법, 스타일, React/Next.js 사용법, 위험한 패턴 등을 검사하는 도구다.
+
+지금 구조는 이렇게 되어 있다.
+
+packages/eslint-config/
+  package.json   -> 이 폴더를 @atelier/eslint-config라는 패키지로 등록하는 파일
+  next-app.mjs   -> Next.js 앱에서 실제로 사용할 ESLint 설정 파일
+
+apps/blog/
+  eslint.config.mjs -> 공통 설정을 가져와서 블로그 앱에 적용하는 파일
+
+
+1. 왜 packages/eslint-config를 만들었나
+
+처음에는 apps/blog/eslint.config.mjs 안에 ESLint 설정이 직접 들어 있었다.
+
+앱이 하나뿐일 때는 괜찮다.
+하지만 나중에 apps/admin, apps/shop 같은 앱이 추가되면 같은 ESLint 설정을 계속 복사해야 한다.
+
+그렇게 되면 문제가 생긴다.
+
+- 앱마다 ESLint 규칙이 조금씩 달라질 수 있다.
+- 수정할 때 여러 파일을 전부 고쳐야 한다.
+- 어떤 앱은 최신 규칙이고 어떤 앱은 예전 규칙인 상태가 될 수 있다.
+
+그래서 공통 규칙을 packages/eslint-config로 빼두었다.
+
+이제 각 앱은 작은 eslint.config.mjs만 두고, 실제 규칙은 공통 패키지에서 가져다 쓰면 된다.
+
+
+2. packages/eslint-config/package.json 설명
+
+파일 위치:
+
+packages/eslint-config/package.json
+
+내용:
+
+{
+  "name": "@atelier/eslint-config",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./next-app": "./next-app.mjs"
+  },
+  "files": [
+    "next-app.mjs"
+  ],
+  "peerDependencies": {
+    "eslint": "^9",
+    "eslint-config-next": "16.2.4"
+  },
+  "devDependencies": {
+    "eslint": "^9",
+    "eslint-config-next": "16.2.4"
+  }
+}
+
+이 파일은 packages/eslint-config 폴더를 @atelier/eslint-config라는 워크스페이스 패키지로 등록한다.
+
+이 파일 자체가 ESLint 규칙을 직접 담고 있는 것은 아니다.
+실제 ESLint 규칙은 next-app.mjs에 들어 있다.
+
+
+3. name
+
+내용:
+
+"name": "@atelier/eslint-config"
+
+이 패키지의 이름이다.
+
+packages/eslint-config 폴더를 앞으로 이렇게 부를 수 있게 만든다.
+
+@atelier/eslint-config
+
+그래서 앱에서는 이런 식으로 공통 설정을 가져올 수 있다.
+
+import nextAppConfig from "@atelier/eslint-config/next-app";
+
+여기서 @atelier/eslint-config는 package.json의 name으로 등록된 패키지 이름이다.
+next-app은 그 패키지에서 밖으로 열어둔 설정 이름이다.
+
+
+4. version
+
+내용:
+
+"version": "0.1.0"
+
+패키지 버전이다.
+
+외부 npm에 배포하려는 패키지는 아니지만, 워크스페이스 안에서도 패키지 형태를 갖추려면 보통 버전을 둔다.
+
+지금 의미는 "초기 단계의 공통 ESLint 설정 패키지" 정도로 보면 된다.
+
+
+5. private
+
+내용:
+
+"private": true
+
+이 패키지를 외부 npm registry에 실수로 배포하지 못하게 막는 설정이다.
+
+@atelier/eslint-config는 이 모노레포 안에서만 쓰는 내부 설정 패키지다.
+
+
+6. type
+
+내용:
+
+"type": "module"
+
+이 패키지 안의 JavaScript 파일을 ESM 방식으로 해석하겠다는 뜻이다.
+
+ESM 방식은 이런 import/export 문법을 쓰는 방식이다.
+
+import nextVitals from "eslint-config-next/core-web-vitals";
+
+export default nextAppConfig;
+
+우리가 만든 next-app.mjs도 import/export를 쓰고 있으므로 이 방향과 잘 맞는다.
+
+참고로 파일 확장자가 .mjs이면 그 파일은 기본적으로 ESM으로 해석된다.
+그래도 package.json에 type: module을 적어두면 이 패키지가 ESM 기반이라는 의도가 더 분명해진다.
+
+
+7. exports
+
+내용:
+
+"exports": {
+  "./next-app": "./next-app.mjs"
+}
+
+이 패키지 밖에서 어떤 파일을 가져갈 수 있는지 정하는 문이다.
+
+즉 외부 앱에서 이렇게 import하면:
+
+import nextAppConfig from "@atelier/eslint-config/next-app";
+
+실제로는 이 파일을 읽게 된다.
+
+packages/eslint-config/next-app.mjs
+
+뜻을 나누면 이렇다.
+
+@atelier/eslint-config -> 패키지 이름
+./next-app             -> 밖으로 공개한 경로
+./next-app.mjs         -> 실제 파일
+
+즉 exports는 "이 패키지를 쓰는 쪽에는 ./next-app이라는 이름으로 next-app.mjs를 공개하겠다"라는 뜻이다.
+
+
+8. files
+
+내용:
+
+"files": [
+  "next-app.mjs"
+]
+
+이 패키지에서 의미 있는 파일이 무엇인지 표시하는 목록이다.
+
+지금은 private: true라 실제 외부 배포는 하지 않는다.
+그래도 files를 적어두면 이 패키지의 핵심 파일이 next-app.mjs라는 점이 명확해진다.
+
+
+9. peerDependencies
+
+내용:
+
+"peerDependencies": {
+  "eslint": "^9",
+  "eslint-config-next": "16.2.4"
+}
+
+peerDependencies는 "이 패키지를 쓰는 쪽에서도 반드시 같이 가지고 있어야 하는 의존성"을 뜻한다.
+
+쉽게 말하면:
+
+@atelier/eslint-config 혼자서는 동작하지 않는다.
+ESLint 본체와 Next.js용 ESLint 설정 패키지가 같이 있어야 동작한다.
+
+그래서 이 패키지는 사용하는 앱에게 이렇게 말하는 것이다.
+
+"나는 eslint와 eslint-config-next를 전제로 동작해. 나를 쓰려면 너도 이 둘을 가지고 있어야 해."
+
+왜 dependencies가 아니라 peerDependencies에 적을까?
+
+ESLint 설정 패키지는 보통 ESLint 본체를 직접 품고 있기보다, 사용하는 프로젝트의 ESLint와 함께 동작한다.
+
+만약 공통 설정 패키지가 자기만의 eslint를 따로 설치하고, 앱도 자기만의 eslint를 따로 설치하면 버전이 꼬일 수 있다.
+
+그래서 공통 설정 패키지는 이렇게 선언한다.
+
+"나는 eslint가 필요하지만, 실제 eslint는 나를 사용하는 앱 쪽에서 제공해줘."
+
+이런 관계를 peerDependencies라고 한다.
+
+
+10. devDependencies
+
+내용:
+
+"devDependencies": {
+  "eslint": "^9",
+  "eslint-config-next": "16.2.4"
+}
+
+devDependencies는 이 패키지를 개발하거나 검증할 때 필요한 의존성이다.
+
+왜 peerDependencies에도 있고 devDependencies에도 있을까?
+
+peerDependencies는 사용하는 앱에게 "너도 이걸 가지고 있어야 해"라고 알려주는 용도다.
+devDependencies는 이 패키지 폴더 자체에서 코드를 읽고 검증할 때 필요한 용도다.
+
+즉 역할이 다르다.
+
+peerDependencies:
+이 패키지를 사용하는 쪽에 필요한 조건을 적는다.
+
+devDependencies:
+이 패키지를 만드는 쪽에서 필요한 도구를 적는다.
+
+
+11. packages/eslint-config/next-app.mjs 설명
+
+파일 위치:
+
+packages/eslint-config/next-app.mjs
+
+내용:
+
+import { defineConfig, globalIgnores } from "eslint/config";
+import nextVitals from "eslint-config-next/core-web-vitals";
+import nextTs from "eslint-config-next/typescript";
+
+const nextAppConfig = defineConfig([
+  ...nextVitals,
+  ...nextTs,
+  globalIgnores([
+    ".next/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
+  ]),
+]);
+
+export default nextAppConfig;
+
+이 파일이 실제 공통 ESLint 설정이다.
+
+Next.js 앱에서 쓸 규칙을 모아서 nextAppConfig라는 이름으로 만들고, export default로 밖에 내보낸다.
+
+
+12. defineConfig
+
+내용:
+
+import { defineConfig } from "eslint/config";
+
+defineConfig는 ESLint flat config를 더 명확하게 작성하기 위한 도우미다.
+
+flat config는 최신 ESLint에서 사용하는 설정 방식이다.
+예전에는 .eslintrc 같은 파일을 많이 썼지만, 지금은 eslint.config.mjs 같은 flat config 방식을 쓴다.
+
+defineConfig 안에 배열로 여러 설정을 넣으면 ESLint가 그 설정들을 순서대로 합쳐서 사용한다.
+
+
+13. globalIgnores
+
+내용:
+
+import { globalIgnores } from "eslint/config";
+
+globalIgnores는 ESLint가 검사하지 않을 파일이나 폴더를 정하는 도우미다.
+
+지금 제외한 대상은 다음과 같다.
+
+.next/**
+-> Next.js가 빌드하거나 개발 서버 실행 중에 만드는 결과물 폴더다.
+
+out/**
+-> 정적 export 결과물이 생길 때 쓰는 폴더다.
+
+build/**
+-> 빌드 결과물이 들어갈 수 있는 폴더다.
+
+next-env.d.ts
+-> Next.js가 자동으로 만들어주는 타입 선언 파일이다.
+
+이 파일들은 사람이 직접 관리하는 소스 코드가 아니기 때문에 lint 대상에서 제외한다.
+
+
+14. eslint-config-next/core-web-vitals
+
+내용:
+
+import nextVitals from "eslint-config-next/core-web-vitals";
+
+이 설정은 Next.js에서 제공하는 ESLint 규칙 묶음이다.
+
+기본적으로 다음을 검사한다.
+
+- Next.js를 잘못 사용하는 패턴
+- React를 잘못 사용하는 패턴
+- React Hooks 규칙 위반
+- 성능이나 사용자 경험에 영향을 줄 수 있는 Core Web Vitals 관련 문제
+
+Core Web Vitals는 웹 페이지 사용자 경험을 보는 주요 지표다.
+예를 들면 로딩 속도, 화면 반응성, 레이아웃 흔들림 같은 것과 관련이 있다.
+
+eslint-config-next/core-web-vitals는 일반 Next 규칙보다 조금 더 엄격하다.
+특히 사용자 경험에 영향을 주는 규칙을 경고보다 더 강하게 다루는 설정이다.
+
+Next.js 공식 문서에서도 대부분의 프로젝트에 권장하는 설정으로 소개한다.
+
+
+15. eslint-config-next/typescript
+
+내용:
+
+import nextTs from "eslint-config-next/typescript";
+
+이 설정은 TypeScript 프로젝트에 필요한 ESLint 규칙을 추가한다.
+
+Next.js 앱이 TypeScript를 쓰고 있기 때문에 core-web-vitals만 쓰지 않고 typescript 설정도 함께 사용한다.
+
+즉 현재 조합은 이렇다.
+
+core-web-vitals:
+Next.js, React, React Hooks, 사용자 경험 관련 규칙
+
+typescript:
+TypeScript 코드에 필요한 추가 규칙
+
+
+16. 전개 연산자 ...
+
+내용:
+
+...nextVitals,
+...nextTs,
+
+nextVitals와 nextTs는 설정 배열이다.
+
+defineConfig 안에는 여러 설정을 한 배열에 펼쳐 넣어야 한다.
+그래서 ...을 사용해서 배열 안의 항목들을 꺼내 넣는다.
+
+쉽게 말하면:
+
+nextVitals 설정 묶음을 펼쳐 넣고,
+nextTs 설정 묶음도 펼쳐 넣는다.
+
+
+17. apps/blog/eslint.config.mjs 설명
+
+파일 위치:
+
+apps/blog/eslint.config.mjs
+
+내용:
+
+import nextAppConfig from "@atelier/eslint-config/next-app";
+
+export default nextAppConfig;
+
+블로그 앱의 ESLint 설정 파일이다.
+
+이제 블로그 앱은 직접 규칙을 들고 있지 않는다.
+대신 공통 패키지에서 Next 앱용 설정을 가져와서 그대로 내보낸다.
+
+즉 블로그 앱은 이렇게 말하는 셈이다.
+
+"나는 @atelier/eslint-config에 있는 Next 앱 공통 규칙을 그대로 쓸게."
+
+
+18. apps/blog/package.json 변경
+
+내용:
+
+"@atelier/eslint-config": "workspace:*"
+
+이 줄은 블로그 앱이 모노레포 안의 @atelier/eslint-config 패키지를 사용한다는 뜻이다.
+
+workspace:*는 "외부 npm에서 받지 말고, 이 pnpm workspace 안에 있는 패키지를 연결해서 써라"라는 의미다.
+
+즉 @atelier/blog는 packages/eslint-config를 내부 의존성으로 사용한다.
+
+
+19. 전체 동작 흐름
+
+루트에서 실행:
+
+pnpm lint
+
+흐름:
+
+1. 루트 package.json의 lint 스크립트가 실행된다.
+2. pnpm -r lint가 워크스페이스 패키지들의 lint 스크립트를 실행한다.
+3. @atelier/blog의 lint 스크립트가 eslint를 실행한다.
+4. ESLint가 apps/blog/eslint.config.mjs를 읽는다.
+5. apps/blog/eslint.config.mjs가 @atelier/eslint-config/next-app을 import한다.
+6. package.json의 exports 설정에 따라 packages/eslint-config/next-app.mjs가 읽힌다.
+7. next-app.mjs 안의 core-web-vitals, typescript, ignore 설정이 적용된다.
+8. ESLint가 블로그 앱 코드를 검사한다.
+
+
+20. 최종 정리
+
+package.json:
+packages/eslint-config를 @atelier/eslint-config라는 패키지로 등록한다.
+
+exports:
+@atelier/eslint-config/next-app으로 import하면 next-app.mjs를 읽게 만든다.
+
+peerDependencies:
+이 설정 패키지를 쓰는 앱도 eslint와 eslint-config-next를 가지고 있어야 한다고 알려준다.
+
+devDependencies:
+이 설정 패키지 자체를 개발하고 검증할 때 필요한 도구를 적는다.
+
+next-app.mjs:
+Next.js 앱에서 실제로 사용할 ESLint 규칙을 담은 파일이다.
+
+eslint-config-next/core-web-vitals:
+Next.js, React, React Hooks, 사용자 경험 관련 규칙을 포함한 공식 권장 설정이다.
+
+eslint-config-next/typescript:
+TypeScript 프로젝트용 ESLint 규칙을 추가하는 설정이다.
+
+apps/blog/eslint.config.mjs:
+공통 설정을 가져와서 블로그 앱에 적용하는 연결 파일이다.

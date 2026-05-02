@@ -1,6 +1,26 @@
-packages/tsconfig/package.json 설명
+packages/tsconfig 이해 정리
 
-이 파일은 코드를 실행하는 파일이 아니라, packages/tsconfig 폴더를 하나의 패키지로 인식시키는 설명서다.
+핵심부터 정리
+
+packages/tsconfig 안에는 역할이 다른 파일이 3개 있다.
+
+packages/tsconfig/
+  package.json   -> 이 폴더를 @atelier/tsconfig라는 패키지로 등록하는 이름표
+  base.json      -> 공통 TypeScript 설정이 실제로 들어 있는 파일
+  next-app.json  -> Next.js 앱용 TypeScript 설정이 실제로 들어 있는 파일
+
+중요한 점:
+
+- package.json은 TypeScript 설정 파일이 아니다.
+- extends가 실제로 읽는 파일은 package.json이 아니라 base.json 또는 next-app.json이다.
+- package.json은 @atelier/tsconfig라는 패키지 이름을 만들어주는 역할을 한다.
+
+
+1. package.json은 무엇인가
+
+파일 위치:
+
+packages/tsconfig/package.json
 
 내용:
 
@@ -14,74 +34,200 @@ packages/tsconfig/package.json 설명
   ]
 }
 
-1. name
+이 파일은 packages/tsconfig 폴더를 하나의 워크스페이스 패키지로 인식시키는 파일이다.
+
+쉽게 말하면:
+
+packages/tsconfig라는 폴더에 @atelier/tsconfig라는 이름표를 붙이는 파일이다.
+
+이 파일 안에는 TypeScript 규칙이 직접 들어 있지 않다.
+실제 TypeScript 규칙은 base.json과 next-app.json에 들어 있다.
+
+
+2. name은 무엇인가
+
+내용:
 
 "name": "@atelier/tsconfig"
 
-이 패키지의 이름이다.
+이 값은 패키지의 이름이다.
 
-@atelier/tsconfig는 "Atelier 프로젝트에서 쓰는 TypeScript 설정 패키지"라는 뜻으로 보면 된다.
+즉 packages/tsconfig 폴더를 앞으로 이렇게 부를 수 있게 만든다.
 
-나중에 다른 앱이나 패키지에서 이런 식으로 참조할 수도 있다.
+@atelier/tsconfig
+
+그래서 나중에는 다른 앱에서 이런 식으로 쓸 수 있다.
 
 {
   "extends": "@atelier/tsconfig/next-app.json"
 }
 
-다만 지금은 아직 그렇게 하지 않고, 상대 경로로 참조하고 있다.
+여기서 헷갈리면 안 되는 부분:
+
+@atelier/tsconfig/next-app.json은 package.json을 읽으라는 뜻이 아니다.
+
+뜻을 나누면 이렇다.
+
+@atelier/tsconfig  -> package.json의 name으로 등록된 패키지 이름
+next-app.json      -> 그 패키지 안에 있는 실제 TypeScript 설정 파일
+
+즉 이 문장은 이렇게 해석하면 된다.
+
+"@atelier/tsconfig라는 패키지 안에 있는 next-app.json 파일을 TypeScript 설정으로 읽어라."
+
+
+3. 지금은 왜 상대 경로를 쓰는가
+
+현재 apps/blog/tsconfig.json은 이런 식으로 되어 있다.
 
 {
   "extends": "../../packages/tsconfig/next-app.json"
 }
 
-지금 상대 경로를 쓴 이유는 의존성 연결이나 lockfile 변경 없이 바로 쓸 수 있기 때문이다.
+이건 패키지 이름으로 찾는 방식이 아니라, 파일 위치로 직접 찾아가는 방식이다.
 
-2. version
+뜻:
+
+apps/blog/tsconfig.json에서 두 단계 위로 올라간 뒤,
+packages/tsconfig/next-app.json 파일을 읽어라.
+
+즉 지금 실제로 읽는 파일도 package.json이 아니라 next-app.json이다.
+
+지금 상대 경로를 쓰는 이유는 단순하다.
+
+- 의존성 연결을 추가하지 않아도 된다.
+- lockfile을 바꾸지 않아도 된다.
+- 바로 안정적으로 동작한다.
+
+나중에 앱마다 @atelier/tsconfig를 devDependencies로 연결하면 아래 방식으로 바꿀 수 있다.
+
+{
+  "extends": "@atelier/tsconfig/next-app.json"
+}
+
+두 방식의 차이는 "어떻게 찾아가느냐"다.
+
+../../packages/tsconfig/next-app.json
+-> 파일 경로로 직접 찾아간다.
+
+@atelier/tsconfig/next-app.json
+-> package.json의 name을 통해 패키지를 찾고, 그 안의 next-app.json을 읽는다.
+
+하지만 둘 다 최종적으로 읽는 파일은 next-app.json이다.
+
+
+4. version은 무엇인가
+
+내용:
 
 "version": "0.1.0"
 
 패키지 버전이다.
 
-실제로 npm에 배포하는 패키지는 아니지만, 워크스페이스 안에서도 패키지 형태를 갖추려면 보통 버전을 둔다.
+이 패키지는 외부 npm에 배포하려는 패키지는 아니다.
+그래도 워크스페이스 안에서 패키지 형태를 갖추려면 보통 version을 둔다.
 
-지금 의미는 "아직 초기 설정 패키지다" 정도로 보면 된다.
+지금 의미는 "아직 초기 단계의 공통 TypeScript 설정 패키지" 정도로 보면 된다.
 
-3. private
+
+5. private은 무엇인가
+
+내용:
 
 "private": true
 
 이 패키지를 외부 npm registry에 실수로 배포하지 못하게 막는 설정이다.
 
-packages/tsconfig는 모노레포 내부에서만 쓰는 설정 패키지다.
-누가 실수로 pnpm publish 같은 명령을 실행해도 배포되지 않게 막아둔 것이다.
+packages/tsconfig는 이 모노레포 안에서만 쓰는 내부 설정 패키지다.
+누가 실수로 publish 명령을 실행해도 외부에 올라가지 않도록 막아둔 것이다.
 
-4. files
+
+6. files는 무엇인가
+
+내용:
 
 "files": [
   "base.json",
   "next-app.json"
 ]
 
-이 패키지에서 의미 있는 파일은 이 두 개라고 표시하는 목록이다.
+이 패키지에서 의미 있는 파일이 무엇인지 표시하는 목록이다.
 
 base.json은 공통 TypeScript 설정이다.
 next-app.json은 Next.js 앱용 TypeScript 설정이다.
 
-지금은 private: true라 실제 배포는 안 하지만, 이 목록을 써두면 패키지의 목적이 명확해진다.
+지금은 private: true라 실제 배포하지는 않지만, 이 목록을 적어두면 패키지의 목적이 명확해진다.
 
-폴더 구조로 보면 다음과 같다.
 
-packages/tsconfig/
-  package.json   -> 이 폴더는 "공통 TS 설정 패키지"라고 이름 붙이는 명찰
-  base.json      -> 모든 곳에서 공통으로 쓸 기본 규칙
-  next-app.json  -> Next 앱이 쓸 추가 규칙
+7. base.json은 무엇인가
 
-결론:
+파일 위치:
 
-package.json 자체가 TypeScript 설정을 직접 하지는 않는다.
+packages/tsconfig/base.json
 
-대신 packages/tsconfig 폴더를 그냥 json 파일 모음이 아니라, @atelier/tsconfig 라는 워크스페이스 패키지로 만들어주는 역할을 한다.
+역할:
 
-즉 이 파일의 핵심은:
+여러 앱과 패키지에서 공통으로 사용할 TypeScript 기본 규칙을 담는다.
 
-packages/tsconfig를 모노레포 안의 공식 공통 설정 패키지로 등록하는 파일이다.
+예를 들면 strict 모드, 모듈 해석 방식, JavaScript 파일 허용 여부 같은 기본 규칙이 들어간다.
+
+즉 base.json은 "Atelier 프로젝트 전체에서 기본으로 지킬 TypeScript 규칙"이다.
+
+
+8. next-app.json은 무엇인가
+
+파일 위치:
+
+packages/tsconfig/next-app.json
+
+역할:
+
+Next.js 앱에서 사용할 TypeScript 설정을 담는다.
+
+next-app.json은 보통 base.json을 먼저 가져온 뒤, Next.js 앱에 필요한 설정만 추가한다.
+
+즉 next-app.json은 "Next.js 앱이 쓸 TypeScript 규칙"이다.
+
+apps/blog/tsconfig.json이 extends로 읽는 실제 설정 파일은 이 next-app.json이다.
+
+
+9. 전체 동작 흐름
+
+현재 흐름:
+
+apps/blog/tsconfig.json
+  -> ../../packages/tsconfig/next-app.json을 읽음
+  -> next-app.json이 base.json을 읽음
+  -> base.json의 공통 규칙과 next-app.json의 Next 앱 규칙이 합쳐짐
+
+나중에 패키지 이름으로 바꾸면 흐름은 이렇게 된다.
+
+apps/blog/tsconfig.json
+  -> @atelier/tsconfig/next-app.json을 읽음
+  -> @atelier/tsconfig는 package.json의 name으로 찾음
+  -> 그 패키지 안의 next-app.json을 읽음
+  -> next-app.json이 base.json을 읽음
+
+여기서도 package.json은 직접 TypeScript 설정을 제공하지 않는다.
+package.json은 @atelier/tsconfig라는 이름으로 패키지를 찾을 수 있게 도와주는 역할이다.
+
+
+최종 정리
+
+package.json:
+packages/tsconfig 폴더에 @atelier/tsconfig라는 이름을 붙이는 파일이다.
+
+base.json:
+공통 TypeScript 규칙이 실제로 들어 있는 파일이다.
+
+next-app.json:
+Next.js 앱용 TypeScript 규칙이 실제로 들어 있는 파일이다.
+
+extends:
+package.json을 읽는 것이 아니라, base.json이나 next-app.json 같은 실제 TypeScript 설정 파일을 읽는다.
+
+가장 중요한 한 문장:
+
+"@atelier/tsconfig/next-app.json"은
+"@atelier/tsconfig라는 패키지의 package.json을 읽어라"가 아니라,
+"@atelier/tsconfig라는 패키지 안에 있는 next-app.json 설정 파일을 읽어라"라는 뜻이다.

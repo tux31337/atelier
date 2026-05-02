@@ -1,0 +1,20 @@
+{
+  "name": "@atelier/eslint-config",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./next-app": "./next-app.mjs"
+  },
+  "files": [
+    "next-app.mjs"
+  ],
+  "peerDependencies": {
+    "eslint": "^9",
+    "eslint-config-next": "16.2.4"
+  },
+  "devDependencies": {
+    "eslint": "^9",
+    "eslint-config-next": "16.2.4"
+  }
+}
