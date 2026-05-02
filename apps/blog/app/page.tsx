@@ -1,81 +1,78 @@
-import { Cpu, FlaskConical, Layers, ArrowUpRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { getAllPosts } from "@/lib/posts";
 
 export default function HomePage() {
+  const posts = getAllPosts().slice(0, 3);
+
   return (
-    <section className="flex-1 relative overflow-hidden flex flex-col items-center justify-center py-20">
-      {/* Atmospheric backgrounds */}
-      <div className="absolute inset-0 grid-bg pointer-events-none opacity-40" />
-      <div className="absolute inset-0 hero-glow pointer-events-none" />
-
-      {/* Floating node: Engineering (top-left) */}
-      <div
-        className="absolute top-[20%] left-[15%] glass-card p-6 rounded-xl animate-pulse hidden lg:block"
-        style={{ animationDuration: "4s" }}
-      >
-        <div className="flex flex-col gap-2">
-          <Cpu className="text-secondary size-8" />
-          <h3 className="font-headline-lg text-lg text-zinc-100">Engineering</h3>
-          <p className="text-xs text-zinc-500 font-code-label">Full-Stack Scalability</p>
+    <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-16 px-6 py-20 lg:py-28">
+      <section className="max-w-3xl space-y-6">
+        <p className="font-code-label text-code-label text-secondary">Atelier</p>
+        <h1 className="font-display-xl text-display-xl text-on-background">
+          읽고, 만들고, 다시 정리하는 프론트엔드 작업실.
+        </h1>
+        <p className="max-w-2xl font-blog-content text-blog-content text-on-surface-variant">
+          Next.js, UI 시스템, 배포 구조를 직접 만들며 배운 것을 글과 프로젝트로 남깁니다.
+        </p>
+        <div className="flex flex-wrap gap-3 pt-2">
+          <Link
+            href="/blog"
+            className="inline-flex items-center gap-2 rounded-md bg-secondary px-4 py-2 font-code-label text-code-label text-on-secondary transition-colors hover:bg-secondary/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            글 보기
+            <ArrowRight className="size-4" />
+          </Link>
+          <Link
+            href="/projects"
+            className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 font-code-label text-code-label text-on-surface transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            프로젝트
+          </Link>
         </div>
-      </div>
+      </section>
 
-      {/* Floating node: The Lab (top-right) */}
-      <div
-        className="absolute top-[25%] right-[10%] glass-card p-6 rounded-xl animate-pulse hidden lg:block"
-        style={{ animationDuration: "5s" }}
-      >
-        <div className="flex flex-col gap-2">
-          <FlaskConical className="text-tertiary size-8" />
-          <h3 className="font-headline-lg text-lg text-zinc-100">The Lab</h3>
-          <p className="text-xs text-zinc-500 font-code-label">AI &amp; Web3 Research</p>
-        </div>
-      </div>
-
-      {/* Floating node: Design (bottom-left) */}
-      <div
-        className="absolute bottom-[20%] left-[10%] glass-card p-6 rounded-xl animate-pulse hidden lg:block"
-        style={{ animationDuration: "6s" }}
-      >
-        <div className="flex flex-col gap-2">
-          <Layers className="text-secondary-container size-8" />
-          <h3 className="font-headline-lg text-lg text-zinc-100">Design</h3>
-          <p className="text-xs text-zinc-500 font-code-label">3D UI &amp; Systems</p>
-        </div>
-      </div>
-
-      {/* Central hero content */}
-      <div className="relative z-10 flex flex-col items-center text-center max-w-4xl px-gutter">
-        {/* Mascot placeholder — replace with actual 3D character image */}
-        <div className="relative w-full max-w-md aspect-square flex items-center justify-center mb-base">
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent z-20" />
-          <div className="w-64 h-64 rounded-full bg-surface-container-high flex items-center justify-center opacity-20">
-            <span className="text-8xl font-black text-zinc-400 font-headline-lg select-none">
-              D
-            </span>
+      <section className="space-y-5">
+        <div className="flex items-end justify-between gap-6 border-b border-border pb-4">
+          <div>
+            <h2 className="font-headline-lg text-2xl text-on-surface">최근 글</h2>
+            <p className="mt-2 font-body-md text-body-md text-on-surface-variant">
+              새로 정리한 기록을 먼저 보여줍니다.
+            </p>
           </div>
+          <Link
+            href="/blog"
+            className="hidden font-code-label text-code-label text-secondary hover:underline sm:inline"
+          >
+            전체 보기
+          </Link>
         </div>
 
-        <div className="space-y-4">
-          <h1 className="font-display-xl text-display-xl text-on-background uppercase">
-            Architecting <br /> Digital Dreams.
-          </h1>
-          <p className="font-blog-content text-blog-content text-zinc-400 max-w-2xl mx-auto">
-            Bridging the gap between artistic vision and technical precision. I build
-            high-performance web experiences with a focus on motion and 3D interaction.
-          </p>
-          <div className="pt-8 flex justify-center">
-            <Link
-              href="/blog"
-              className="bg-secondary text-on-secondary font-code-label text-code-label px-8 py-4 rounded-full hover:opacity-90 transition-all flex items-center gap-2 group"
+        <div className="grid gap-4">
+          {posts.map((post) => (
+            <article
+              key={post.slug}
+              className="rounded-md border border-border bg-card p-5 transition-colors hover:bg-muted/40"
             >
-              START JOURNEY
-              <ArrowUpRight className="size-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-            </Link>
-          </div>
+              <Link href={`/blog/${post.slug}`} className="block space-y-3">
+                <div className="flex flex-wrap items-center gap-3 font-code-label text-code-label text-muted-foreground">
+                  <span>{post.category}</span>
+                  <span aria-hidden="true">/</span>
+                  <time dateTime={post.date}>
+                    {new Date(post.date).toLocaleDateString("ko-KR")}
+                  </time>
+                </div>
+                <h3 className="font-headline-lg text-2xl text-card-foreground">
+                  {post.title}
+                </h3>
+                <p className="font-body-md text-body-md text-muted-foreground">
+                  {post.excerpt}
+                </p>
+              </Link>
+            </article>
+          ))}
         </div>
-      </div>
-
-    </section>
+      </section>
+    </div>
   );
 }

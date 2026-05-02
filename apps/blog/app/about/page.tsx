@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "About",
+  title: "소개",
 };
 
 export default function AboutPage() {
   return (
-    <div className="max-w-5xl mx-auto px-6 py-20 lg:py-32">
+    <div className="mx-auto max-w-5xl px-6 py-20 lg:py-28">
       <header className="space-y-6">
         <h1 className="font-display-xl text-display-xl text-on-surface">
-          About
+          소개
         </h1>
-        <p className="font-blog-content text-blog-content text-on-surface-variant max-w-[580px] italic">
-          A note on the studio, the work, and the workflow. Drafting underway.
+        <p className="max-w-[580px] font-blog-content text-blog-content text-on-surface-variant">
+          작업실의 방향, 공부한 것, 만들고 싶은 것들을 정리하는 페이지입니다.
         </p>
       </header>
     </div>

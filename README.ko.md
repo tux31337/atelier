@@ -1,19 +1,31 @@
 # Atelier 한국어 안내서
 
-Atelier는 블로그를 시작점으로 여러 프론트엔드 프로젝트를 함께 관리하기 위한 작업 공간입니다. 처음에는 블로그를 안정적으로 만들고, 이후 필요한 웹 프로젝트들을 같은 구조 안에서 확장하는 방향을 목표로 합니다.
+Atelier는 여러 프론트엔드 프로젝트를 같은 구조로 관리하기 위한 pnpm 모노레포입니다. 첫 번째 앱은 블로그이며, 이후 추가되는 앱도 같은 작업 공간과 배포 흐름을 따르는 것을 목표로 합니다.
 
 > 영어 문서: [README.md](./README.md). 작업 규칙은 [AGENTS.md](./AGENTS.md)와 [CLAUDE.md](./CLAUDE.md)에 있습니다.
 
-## 방향
+## 기술 스택
 
-이 저장소는 pnpm 기반 모노레포로 운영할 예정입니다. 각 프로젝트는 `apps` 아래에 두고, 여러 프로젝트에서 함께 쓰는 설정과 UI 요소는 `packages` 아래에 나누어 관리합니다.
+- Next.js 16 App Router + React 19
+- TypeScript strict mode
+- Tailwind CSS v4, CSS-first 방식
+- pnpm workspaces
+- Vitest 기반 단위 테스트
 
-우선순위는 다음과 같습니다.
+## 현재 구조
 
-- 블로그 앱을 먼저 만든다.
-- Tailwind CSS를 공통 스타일 기반으로 사용한다.
-- 반복되는 UI, 설정, TypeScript 설정은 공유 패키지로 분리한다.
-- 새 프로젝트가 추가되어도 같은 구조와 명령어 흐름을 유지한다.
+```txt
+apps/
+  blog/                 # 첫 번째 제품 앱, 블로그
+
+docs/                   # 제품, 아키텍처, UI 문서
+scripts/                # 유틸리티 스크립트
+
+pnpm-workspace.yaml     # apps/*, packages/* 워크스페이스 선언
+package.json            # 루트 실행 스크립트
+```
+
+초기 루트 Next.js 앱은 이미 `apps/blog`로 이동했습니다. 현재 루트는 앱을 직접 호스팅하는 곳이 아니라 워크스페이스를 조율하는 위치입니다.
 
 ## 목표 구조
 
@@ -31,49 +43,50 @@ packages/
 
 각 폴더의 역할은 다음과 같습니다.
 
-- `apps/blog`: 첫 번째 제품인 블로그 앱입니다.
-- `apps/*`: 앞으로 추가될 프론트엔드 앱들이 들어갑니다.
-- `packages/ui`: 여러 앱에서 재사용할 수 있는 UI 컴포넌트와 레이아웃 요소를 둡니다.
-- `packages/tailwind-config`: 공통 Tailwind 설정과 디자인 토큰을 관리합니다.
-- `packages/tsconfig`: 공통 TypeScript 설정을 관리합니다.
-- `packages/eslint-config`: 공통 ESLint 설정을 관리합니다.
-- `packages/content`: 블로그 콘텐츠 처리나 콘텐츠 관련 유틸리티가 필요할 때 사용합니다.
+- `apps/blog`: 첫 번째 제품 앱인 블로그입니다.
+- `apps/*`: 앞으로 추가될 프론트엔드 앱이 들어갑니다.
+- `packages/ui`: 여러 앱에서 재사용할 수 있는 React UI 컴포넌트와 레이아웃 원시 요소를 둡니다.
+- `packages/tailwind-config`: 반복되는 Tailwind 토큰이나 프리셋이 생기면 분리합니다.
+- `packages/tsconfig`: 공통 TypeScript 설정을 둡니다.
+- `packages/eslint-config`: 공통 ESLint flat config를 둡니다.
+- `packages/content`: 블로그 콘텐츠 처리 로직이 앱 밖에서도 필요해질 때 분리합니다.
 
-## 현재 상태
+아직 `packages/*` 폴더는 생성되지 않았습니다. 실제 반복이 보이는 순서대로 작게 추가하는 것이 원칙입니다.
 
-현재 저장소는 기본 Next.js 앱 형태에서 출발한 상태입니다. 루트에 `app`, `public`, `next.config.ts`, `postcss.config.mjs` 같은 파일이 있으며, 이는 모노레포 구조로 옮겨가기 전의 시작점으로 봅니다.
+## 루트 명령어
 
-다음 단계에서는 블로그 코드를 `apps/blog`로 옮기고, 루트는 전체 작업 공간을 관리하는 역할로 정리하는 것이 좋습니다.
-
-## 기본 원칙
-
-- 패키지 매니저는 pnpm을 사용합니다.
-- 스타일링은 Tailwind CSS를 우선 사용합니다.
-- 앱 고유의 코드는 각 앱 안에 둡니다.
-- 여러 앱에서 반복해서 쓰이는 코드만 `packages`로 옮깁니다.
-- 처음부터 과하게 추상화하지 않고, 실제 반복이 생겼을 때 공유 구조로 분리합니다.
-
-## 자주 쓸 명령어
-
-아래 명령어들은 모노레포 하네스가 정리되면서 루트에서 실행할 수 있게 유지하는 것을 목표로 합니다.
+루트에서 다음 명령어를 사용할 수 있도록 유지합니다.
 
 ```bash
 pnpm dev
 pnpm build
 pnpm lint
 pnpm typecheck
-```
-
-테스트가 추가되면 다음 명령어도 함께 유지합니다.
-
-```bash
 pnpm test
 ```
 
-## 다음 작업
+Windows에서 PowerShell 실행 정책 때문에 `pnpm`이 막히면 `pnpm.cmd`를 사용하거나 로컬 실행 정책과 Corepack 설정을 정리해야 합니다.
 
-1. 루트에 있는 기존 Next.js 앱을 `apps/blog`로 이동합니다 (`app/`, `public/`, `next.config.ts`, `postcss.config.mjs`, `eslint.config.mjs`, `tsconfig.json`, 관련 deps).
-2. `pnpm-workspace.yaml`에 `packages: [apps/*, packages/*]`를 선언하고, 루트 `package.json`을 워크스페이스 루트 메타데이터로 정리합니다 (이름은 `atelier`, `private: true`, 공통 스크립트 추가).
-3. Tailwind v4·TypeScript·ESLint 설정 중 실제로 반복되는 부분만 `packages/tailwind-config`·`packages/tsconfig`·`packages/eslint-config`로 분리합니다.
-4. `pnpm typecheck`(tsc --noEmit)와, 도입 시 `pnpm test` 스크립트를 루트에서 묶어 실행할 수 있도록 합니다.
-5. 블로그의 기본 레이아웃, 글 목록, 글 상세 구조를 먼저 안정화합니다.
+## 현재 비어 있는 부분
+
+- 공통 패키지(`packages/ui`, `packages/tsconfig`, `packages/eslint-config`)가 아직 없습니다.
+- Dockerfile, Docker Compose, Nginx reverse proxy 설정이 아직 없습니다.
+- blue-green 배포 스크립트가 아직 없습니다.
+- GitHub Actions 같은 CI/CD 설정이 아직 없습니다.
+
+## 작업 원칙
+
+- 패키지 매니저는 pnpm을 사용합니다.
+- 앱은 공유 패키지를 import할 수 있지만, 공유 패키지는 앱에 의존하지 않습니다.
+- Next.js 라우팅, 메타데이터, 폰트, 캐싱, 서버 액션, 설정, 배포 방식을 바꾸기 전에는 설치된 Next.js 문서를 먼저 확인합니다.
+- Tailwind CSS v4의 CSS-first 방식을 유지합니다.
+- 앱 하나에서만 쓰는 코드는 앱 안에 둡니다. 실제 반복이 생겼을 때만 공유 패키지로 분리합니다.
+
+## 다음 작업 추천
+
+1. `packages/ui`, `packages/tsconfig`, `packages/eslint-config` 골격을 만듭니다.
+2. `apps/blog`를 Docker 이미지로 빌드할 수 있게 만듭니다.
+3. Docker Compose로 블로그 컨테이너를 로컬에서 띄웁니다.
+4. Nginx reverse proxy 설정을 추가합니다.
+5. A/B 슬롯 기반 blue-green 배포 스크립트를 만듭니다.
+6. 로컬 명령이 안정화된 뒤 CI/CD를 붙입니다.

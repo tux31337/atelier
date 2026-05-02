@@ -6,9 +6,9 @@ import type { PostMeta } from "@/types/post";
 
 function PostMetaRow({ post }: { post: PostMeta }) {
   return (
-    <div className="flex items-center gap-3 font-code-label text-code-label uppercase tracking-widest text-on-tertiary-container">
-      <span>{new Date(post.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
-      <span className="w-1 h-1 rounded-full bg-outline-variant shrink-0" />
+    <div className="flex items-center gap-3 font-code-label text-code-label text-muted-foreground">
+      <time dateTime={post.date}>{new Date(post.date).toLocaleDateString("ko-KR")}</time>
+      <span className="h-1 w-1 shrink-0 rounded-full bg-outline-variant" />
       <span>{post.category}</span>
     </div>
   );
@@ -18,22 +18,22 @@ function FeaturedPost({ post }: { post: PostMeta }) {
   return (
     <article className="group col-span-1 lg:col-span-2">
       <Link href={`/blog/${post.slug}`} className="block">
-        <div className="glass-card rounded-xl overflow-hidden border border-white/5 hover:border-white/15 transition-all duration-500">
-          <div className="w-full h-48 bg-surface-container-high flex items-center justify-center opacity-30">
-            <span className="font-headline-lg text-zinc-500 text-sm uppercase tracking-widest">
+        <div className="overflow-hidden rounded-md border border-border bg-card transition-colors hover:bg-muted/40">
+          <div className="flex h-48 w-full items-center justify-center bg-surface-container-high">
+            <span className="font-code-label text-code-label text-muted-foreground">
               Cover Image
             </span>
           </div>
-          <div className="p-8 flex flex-col gap-5">
+          <div className="flex flex-col gap-5 p-8">
             <PostMetaRow post={post} />
-            <h2 className="font-headline-lg text-headline-lg text-on-surface group-hover:text-secondary transition-colors duration-300">
+            <h2 className="font-headline-lg text-headline-lg text-on-surface transition-colors group-hover:text-secondary">
               {post.title}
             </h2>
             <p className="font-blog-content text-blog-content text-on-surface-variant line-clamp-2">
               {post.excerpt}
             </p>
-            <span className="inline-flex items-center gap-2 font-code-label text-code-label uppercase border-b border-secondary/30 pb-1 text-secondary w-fit group-hover:border-secondary transition-all">
-              Read Full Post
+            <span className="inline-flex w-fit items-center gap-2 font-code-label text-code-label text-secondary underline-offset-4 group-hover:underline">
+              글 읽기
               <ArrowRight className="size-4" />
             </span>
           </div>
@@ -47,33 +47,33 @@ function PostCard({ post }: { post: PostMeta }) {
   return (
     <article className="group">
       <Link href={`/blog/${post.slug}`} className="block h-full">
-        <div className="glass-card rounded-xl overflow-hidden border border-white/5 hover:border-white/15 transition-all duration-500 h-full flex flex-col">
-          <div className="w-full aspect-[16/9] overflow-hidden shrink-0">
+        <div className="flex h-full flex-col overflow-hidden rounded-md border border-border bg-card transition-colors hover:bg-muted/40">
+          <div className="relative aspect-[16/9] w-full shrink-0 overflow-hidden">
             {post.image ? (
               <Image
                 src={post.image}
                 alt={post.title}
                 fill
-                className="object-cover opacity-60 grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700"
+                className="object-cover"
               />
             ) : (
-              <div className="w-full h-full bg-surface-container-high flex items-center justify-center opacity-20">
-                <span className="font-headline-lg text-zinc-500 text-xs uppercase tracking-widest">
+              <div className="flex h-full w-full items-center justify-center bg-surface-container-high">
+                <span className="font-code-label text-code-label text-muted-foreground">
                   {post.category}
                 </span>
               </div>
             )}
           </div>
-          <div className="p-6 flex flex-col gap-4 flex-1">
+          <div className="flex flex-1 flex-col gap-4 p-6">
             <PostMetaRow post={post} />
-            <h2 className="font-headline-lg text-2xl text-on-surface group-hover:text-secondary transition-colors duration-300 line-clamp-2">
+            <h2 className="line-clamp-2 font-headline-lg text-2xl text-on-surface transition-colors group-hover:text-secondary">
               {post.title}
             </h2>
-            <p className="font-body-md text-body-md text-on-surface-variant line-clamp-3 flex-1">
+            <p className="line-clamp-3 flex-1 font-body-md text-body-md text-on-surface-variant">
               {post.excerpt}
             </p>
-            <span className="inline-flex items-center gap-2 font-code-label text-code-label uppercase border-b border-secondary/30 pb-1 text-secondary w-fit group-hover:border-secondary transition-all mt-auto pt-2">
-              Read
+            <span className="mt-auto inline-flex w-fit items-center gap-2 pt-2 font-code-label text-code-label text-secondary underline-offset-4 group-hover:underline">
+              읽기
               <ArrowRight className="size-3" />
             </span>
           </div>
@@ -88,14 +88,13 @@ export default function BlogPage() {
   const [featured, ...rest] = posts;
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-20 lg:py-32">
-      <header className="mb-20 space-y-6">
+    <div className="mx-auto max-w-5xl px-6 py-20 lg:py-28">
+      <header className="mb-16 max-w-3xl space-y-6">
         <h1 className="font-display-xl text-display-xl text-on-surface">
-          Journal of <br className="hidden sm:block" /> Kinetic Code
+          작업 기록
         </h1>
-        <p className="font-blog-content text-blog-content text-on-surface-variant max-w-[580px] italic">
-          Explorations at the intersection of rigorous systems architecture and fluid visual
-          storytelling. Documenting the process of making code move.
+        <p className="max-w-[620px] font-blog-content text-blog-content text-on-surface-variant">
+          프론트엔드 구조, UI 시스템, 배포 흐름을 직접 만들며 배운 내용을 정리합니다.
         </p>
       </header>
 
@@ -106,14 +105,14 @@ export default function BlogPage() {
         ))}
       </section>
 
-      <div className="mt-20 pt-12 border-t border-white/5 flex justify-between items-center">
-        <button className="font-code-label text-code-label uppercase text-zinc-500 hover:text-zinc-100 transition-colors flex items-center gap-2">
+      <div className="mt-20 flex items-center justify-between border-t border-border pt-12">
+        <button className="flex items-center gap-2 font-code-label text-code-label text-muted-foreground transition-colors hover:text-on-surface">
           <ArrowLeft className="size-4" />
-          Newer
+          최신
         </button>
-        <div className="font-code-label text-code-label text-zinc-600">Page 01 / 01</div>
-        <button className="font-code-label text-code-label uppercase text-zinc-100 hover:text-zinc-300 transition-colors flex items-center gap-2">
-          Older
+        <div className="font-code-label text-code-label text-muted-foreground">1 / 1</div>
+        <button className="flex items-center gap-2 font-code-label text-code-label text-on-surface transition-colors hover:text-secondary">
+          이전
           <ArrowRight className="size-4" />
         </button>
       </div>

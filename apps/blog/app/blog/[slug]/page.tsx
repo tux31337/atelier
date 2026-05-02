@@ -29,44 +29,35 @@ export default async function PostPage({ params }: Props) {
 
   return (
     <main className="relative">
-      {/* Hero */}
-      <header className="relative w-full overflow-hidden pt-20 pb-12">
-        <div className="max-w-7xl mx-auto px-6 md:px-12">
-          <div className="relative z-10 text-center space-y-8">
-            <div className="inline-block px-3 py-1 bg-surface-container-highest border border-outline-variant rounded-full font-code-label text-code-label text-on-surface-variant uppercase">
+      <header className="relative w-full overflow-hidden pb-12 pt-20">
+        <div className="mx-auto max-w-5xl px-6">
+          <div className="relative z-10 max-w-3xl space-y-8">
+            <div className="inline-block rounded-md border border-border bg-surface-container px-3 py-1 font-code-label text-code-label text-on-surface-variant">
               {post.category}
             </div>
-            <h1 className="font-display-xl text-4xl md:text-6xl lg:text-display-xl max-w-5xl mx-auto leading-tight">
+            <h1 className="max-w-4xl font-display-xl text-4xl leading-tight md:text-display-xl">
               {post.title}
             </h1>
-            <div className="flex flex-wrap justify-center items-center gap-6 pt-4 font-body-md text-body-md text-on-surface-variant">
-              <span>
-                {new Date(post.date).toLocaleDateString("en-US", {
-                  month: "long",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </span>
-              <span className="w-1 h-1 bg-outline rounded-full hidden sm:block" />
+            <div className="flex flex-wrap items-center gap-4 pt-2 font-body-md text-body-md text-on-surface-variant">
+              <time dateTime={post.date}>{new Date(post.date).toLocaleDateString("ko-KR")}</time>
+              <span className="hidden h-1 w-1 rounded-full bg-outline sm:block" />
               <span>{post.readingTime} min read</span>
             </div>
           </div>
         </div>
 
-        {/* Hero image */}
-        <div className="mt-16 w-full max-w-7xl mx-auto px-6 md:px-12">
-          <div className="relative h-[300px] md:h-[500px] rounded-xl overflow-hidden shadow-2xl bg-surface-container">
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent z-10" />
+        <div className="mx-auto mt-12 w-full max-w-5xl px-6">
+          <div className="relative h-[280px] overflow-hidden rounded-md border border-border bg-surface-container md:h-[420px]">
             {post.image ? (
               <Image
                 src={post.image}
                 alt={post.title}
                 fill
-                className="object-cover opacity-50"
+                className="object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center opacity-20">
-                <span className="text-6xl font-black text-zinc-600 font-headline-lg">
+              <div className="flex h-full w-full items-center justify-center">
+                <span className="font-headline-lg text-6xl font-semibold text-muted-foreground">
                   {post.category.slice(0, 1)}
                 </span>
               </div>
@@ -75,26 +66,24 @@ export default async function PostPage({ params }: Props) {
         </div>
       </header>
 
-      {/* Article body */}
-      <article className="max-w-4xl mx-auto px-6 md:px-12 py-20">
+      <article className="mx-auto max-w-3xl px-6 py-20">
         <Link
           href="/blog"
-          className="inline-flex items-center gap-2 font-code-label text-code-label uppercase text-zinc-500 hover:text-zinc-100 transition-colors mb-12"
+          className="mb-12 inline-flex items-center gap-2 font-code-label text-code-label text-muted-foreground transition-colors hover:text-on-surface"
         >
           <ArrowLeft className="size-4" />
-          All Posts
+          모든 글
         </Link>
 
         <div className="prose-custom">
           <MDXRemote source={post.content} components={mdxComponents} />
         </div>
 
-        {/* Tags */}
-        <div className="flex flex-wrap gap-x-4 gap-y-2 pt-12 border-t border-white/5 mt-16">
+        <div className="mt-16 flex flex-wrap gap-x-4 gap-y-2 border-t border-border pt-12">
           {post.tags.map((tag) => (
             <span
               key={tag}
-              className="text-xs font-code-label text-zinc-500 uppercase tracking-widest"
+              className="font-code-label text-xs text-muted-foreground"
             >
               #{tag}
             </span>

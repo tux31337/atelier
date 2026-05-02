@@ -1,83 +1,107 @@
 # 아키텍처
 
-## 모노레포 구조
+## 방향
 
-```
+Atelier는 블로그를 첫 제품 앱으로 두고, 이후 앱을 같은 방식으로 추가할 수 있는 프론트엔드 모노레포입니다. 현재는 `apps/blog` 하나가 있는 상태이며, 공유 패키지는 아직 만들지 않았습니다.
+
+원칙은 작게 시작하고, 실제 반복이 보일 때만 분리하는 것입니다. 처음부터 모든 공통 패키지를 채우기보다 앱 하나가 안정적으로 동작하고 배포 가능한 구조를 만든 뒤, 필요한 부분만 `packages/*`로 올립니다.
+
+## 현재 구조
+
+```txt
 atelier/
-├── apps/
-│   └── blog/                    # 블로그 앱 (현재 유일한 앱)
-│       ├── app/                 # Next.js App Router
-│       │   ├── layout.tsx
-│       │   ├── page.tsx         # 글 목록
-│       │   ├── posts/[slug]/    # 글 상세
-│       │   ├── tags/[tag]/      # 태그별 목록
-│       │   ├── about/           # 어바웃
-│       │   ├── rss.xml/         # RSS route handler
-│       │   └── globals.css
-│       ├── components/          # 블로그 전용 컴포넌트
-│       ├── content/posts/       # MDX 글 (frontmatter + 본문)
-│       ├── lib/                 # 콘텐츠 파싱·날짜 포매팅 등 유틸
-│       ├── public/              # 정적 자산
-│       ├── next.config.ts
-│       ├── postcss.config.mjs
-│       ├── eslint.config.mjs
-│       ├── tsconfig.json
-│       └── package.json
-│
-├── packages/                    # (현재 비어 있음 — 두 번째 사용처가 보일 때 분리)
-│   ├── ui/                      # 시각적 빌딩 블록 (presentational only)
-│   ├── tailwind-config/         # 토큰 + Tailwind v4 preset
-│   ├── tsconfig/                # 공통 tsconfig base
-│   ├── eslint-config/           # 공통 ESLint flat config
-│   └── content/                 # MDX 파싱·메타 추출 유틸 (필요 시)
-│
-├── docs/                        # 가드레일 문서
-├── scripts/                     # phase 실행 하네스
-├── .claude/                     # Claude Code 슬래시 커맨드 + 훅 설정
-├── pnpm-workspace.yaml
-├── package.json                 # 워크스페이스 루트
-├── CLAUDE.md
-└── AGENTS.md
+  apps/
+    blog/
+      app/              # Next.js App Router
+      components/       # 블로그 앱 전용 컴포넌트
+      content/          # MDX 콘텐츠
+      lib/              # 콘텐츠 파싱 등 앱 유틸리티
+      public/           # 정적 파일
+      types/            # 앱 타입
+      next.config.ts
+      package.json
+
+  docs/
+  scripts/
+  package.json
+  pnpm-workspace.yaml
 ```
 
-루트 `app/`/`public/`/`*.config.*`는 더 이상 존재하지 않는다. 모두 `apps/blog/`로 이동했다.
+루트 앱 엔트리포인트는 남겨두지 않습니다. 제품 코드는 `apps/blog`에 있고, 루트는 워크스페이스 스크립트와 문서, 공통 설정의 출발점 역할만 합니다.
 
-## 컴포넌트 패턴
-- **기본은 Server Component.** App Router의 디폴트를 그대로 따른다. 데이터 페치·MDX 컴파일·메타 추출은 서버에서 끝낸다.
-- **`"use client"`는 상호작용·브라우저 API·로컬 상태가 실제로 필요할 때만.** 다크/라이트 토글, 헤더 햄버거 같은 곳에 한정.
-- **Composition over abstraction.** props를 잔뜩 받는 만능 컴포넌트보다, 작고 명확한 컴포넌트를 children으로 합성한다.
-- **표현 계층(`packages/ui`)과 데이터/콘텐츠는 분리.** 추출 시점이 오면 `packages/ui`는 라우팅·콘텐츠 형식을 모르는 채로 작성한다.
+## 목표 구조
 
-## 데이터 흐름
+```txt
+apps/
+  blog/
+  future-app/
 
+packages/
+  ui/
+  tsconfig/
+  eslint-config/
+  tailwind-config/
+  content/
 ```
-content/posts/*.mdx
-  └─ (build / request 시점) lib/posts.ts: frontmatter 파싱 + 정렬
-        └─ Server Component (예: app/page.tsx, app/posts/[slug]/page.tsx)
-              └─ 정적 생성된 HTML + 클라이언트 hydration (필요 부분만)
-```
 
-- 글 목록·상세는 SSG 기본. `generateStaticParams`로 빌드 시 모든 slug를 생성한다.
-- RSS는 build 시 또는 route handler에서 모든 글의 frontmatter를 읽어 XML로 직렬화한다.
-- 다크/라이트 토글 같은 로컬 상태만 클라이언트에 둔다.
+공유 패키지 경계는 다음 기준을 따릅니다.
 
-## 상태 관리
-- **서버 상태**: 콘텐츠 자체. 파일 시스템에서 읽어 Server Component가 렌더한다. 외부 API는 MVP 범위에서 없음.
-- **클라이언트 상태**:
-  - 테마(`light` | `dark` | `system`) — `localStorage` + 매칭 클래스. 1회성 토글 컴포넌트만.
-  - 그 외 인터랙션이 늘어나면 `useState`/`useReducer`로 충분. 전역 상태 라이브러리는 도입하지 않는다.
+- `packages/ui`: presentation-focused 컴포넌트와 레이아웃 원시 요소만 둡니다.
+- `packages/tsconfig`: 앱과 패키지가 공유할 TypeScript base config를 둡니다.
+- `packages/eslint-config`: 공통 ESLint flat config를 둡니다.
+- `packages/tailwind-config`: Tailwind v4 토큰이나 프리셋이 여러 앱에서 반복될 때 분리합니다.
+- `packages/content`: 콘텐츠 파싱이나 콘텐츠 도메인 유틸이 블로그 밖에서도 필요해질 때 분리합니다.
+
+앱은 패키지를 import할 수 있지만, 패키지는 앱을 import하지 않습니다.
+
+## 앱 아키텍처
+
+블로그는 Next.js 16 App Router 기반입니다.
+
+- 기본은 Server Component입니다.
+- `"use client"`는 상호작용, 브라우저 API, 로컬 상태가 필요한 컴포넌트에만 붙입니다.
+- 콘텐츠는 현재 `apps/blog/content/blog/*.mdx`에 둡니다.
+- 콘텐츠 파싱은 `apps/blog/lib/posts.ts`에서 담당합니다.
+- 페이지별 metadata, route behavior, font, cache 관련 변경 전에는 설치된 Next.js 문서를 먼저 확인합니다.
 
 ## 스타일링
-- **Tailwind v4 CSS-first.** `tailwind.config.{js,ts}` 없음. 토큰은 `apps/blog/app/globals.css`의 `@theme` 블록에 정의한다.
-- 두 번째 앱이 등장해 토큰을 공유해야 할 시점에 `packages/tailwind-config`로 추출한다 (Tailwind v4의 CSS preset 형태).
-- 글로벌 CSS는 리셋·테마 토큰·기본 타이포까지만. 페이지·컴포넌트별 셀렉터를 글로벌에 두지 않는다.
 
-## 라우팅
-- App Router 표준. `app/[segment]/page.tsx`.
-- 동적 세그먼트는 `app/posts/[slug]/page.tsx`처럼 디렉터리로 표현.
-- `generateMetadata`로 페이지별 메타를 채운다 — Next 16의 메타데이터 API는 학습 시점 기억과 다를 수 있으니 `node_modules/next/dist/docs/`를 먼저 확인한다.
+Tailwind CSS v4의 CSS-first 방식을 사용합니다.
 
-## 빌드·배포 (현 시점 가정)
-- 빌드: `pnpm -F blog build` (Turbopack 기본)
-- 배포 대상은 미정. Vercel을 가정하고 작성하지만 정적 호스트로도 배포 가능하도록 SSG 위주로 짠다.
-- 환경 변수가 생기면 `apps/blog/.env.local`에 두고 `.gitignore`된 상태를 유지한다.
+- 앱 전역 CSS는 `apps/blog/app/globals.css`에 둡니다.
+- `@theme`과 CSS 변수 기반 토큰을 사용합니다.
+- `tailwind.config.{js,ts}`를 새로 만들지 않습니다.
+- 앱 하나에서만 쓰는 시각 토큰은 앱 안에 둡니다.
+- 여러 앱에서 반복되는 토큰이 생기면 `packages/tailwind-config`로 분리합니다.
+
+## 빌드와 검증
+
+루트 스크립트가 워크스페이스 전체를 조율합니다.
+
+```bash
+pnpm dev
+pnpm build
+pnpm lint
+pnpm typecheck
+pnpm test
+```
+
+현재 환경에서는 PowerShell 실행 정책이나 Corepack 권한 때문에 `pnpm` 실행이 막힐 수 있습니다. 그 경우 `pnpm.cmd` 또는 로컬 Node/Corepack 설정을 확인합니다.
+
+## 배포 방향
+
+아직 Docker, Nginx, CI/CD 구성은 없습니다. 목표 흐름은 다음과 같습니다.
+
+```txt
+코드 변경
+  -> lint/typecheck/test/build
+  -> 앱별 Docker 이미지 빌드
+  -> 이미지 레지스트리에 커밋 해시 태그로 push
+  -> 서버에서 반대 슬롯 컨테이너 실행
+  -> health check
+  -> Nginx include 파일 전환
+  -> Nginx reload
+  -> 이전 슬롯 중지
+```
+
+초기 구현 순서는 `blog Dockerfile -> docker compose -> Nginx reverse proxy -> blue-green deploy script -> CI/CD`가 적절합니다.

@@ -1,39 +1,54 @@
 # apps/blog
 
-Atelier 워크스페이스의 첫 번째 앱. Next.js 16 App Router + React 19로 SSG 기반 블로그를 만든다.
+`apps/blog`는 Atelier 블로그 애플리케이션을 소유한다. Next.js 16 App Router, React 19, Tailwind CSS v4, MDX 콘텐츠 파일, Vitest 기반 콘텐츠 유틸 테스트를 사용한다.
 
-## Owns
+이 문서는 앱 전용 보조 문서다. 저장소 전체 규칙은 `../../AGENTS.md`와 `../../CLAUDE.md`를 따른다.
 
-- 글 목록·상세·홈 페이지의 라우팅과 렌더 (`app/`)
-- MDX 콘텐츠 파싱·정렬·읽기 시간 계산 (`lib/posts.ts`)
-- MDX → React 매핑 한 곳에 집중 (`components/mdx/index.tsx`)
-- 토큰과 Tailwind v4 CSS-first 설정 (`app/globals.css` 의 `@theme inline`)
+## 소유 영역
 
-## Common changes
+- `app/`: 라우트와 렌더링.
+- `components/layout`: 블로그 전용 레이아웃 컴포넌트.
+- `components/mdx`: MDX 컴포넌트 매핑.
+- `components/ui`: 실제 공유 패키지가 생기기 전까지의 블로그 UI 컴포넌트.
+- `content/blog`: MDX 콘텐츠.
+- `lib/posts.ts`: 콘텐츠 파싱, 정렬, 읽기 시간 계산.
+- `types/post.ts`: 글 타입과 frontmatter schema.
+- `app/globals.css`: Tailwind v4 토큰과 앱 전역 스타일.
 
-- **새 글 추가**: `content/blog/{slug}.mdx` 파일 하나만 만든다. frontmatter 필드는 `types/post.ts` 의 `PostFrontmatter` 와 정확히 일치해야 한다.
-- **MDX 렌더 스타일 수정**: `components/mdx/index.tsx` 에서 해당 태그 매핑만 손댄다. 글마다 따로 손대지 않는다.
-- **토큰·색 변경**: `app/globals.css` 한 파일. 다른 곳에 색을 박지 않는다.
+## 자주 하는 변경
+
+- **글 추가**: `content/blog/{slug}.mdx`를 만들고 frontmatter를 `types/post.ts`와 맞춘다.
+- **MDX 렌더링 변경**: `components/mdx/index.tsx`를 수정한다. 글마다 렌더러를 따로 만들지 않는다.
+- **콘텐츠 파싱 변경**: `lib/posts.ts`를 수정하고 `lib/posts.test.ts`를 갱신한다.
+- **토큰이나 앱 전역 스타일 변경**: `app/globals.css`를 수정한다. Tailwind config 파일을 추가하지 않는다.
+- **클라이언트 동작 추가**: 상호작용, 브라우저 API, 로컬 상태가 필요할 때만 `"use client"`를 붙인다.
+
+## 검증
+
+저장소 루트에서 다음 명령을 우선 사용한다.
 
 ```bash
-pnpm -F @atelier/blog dev
-pnpm -F @atelier/blog build
 pnpm -F @atelier/blog typecheck
-pnpm -F @atelier/blog test        # vitest run (lib/**/*.test.ts)
-pnpm -F @atelier/blog test:watch  # 개발 중 변경 감지
+pnpm -F @atelier/blog test
+pnpm -F @atelier/blog lint
+pnpm -F @atelier/blog build
 ```
 
-## Why: 비자명한 규칙
+루트 별칭도 동작하도록 유지한다.
 
-- **Note:** Server Component 가 기본. `"use client"` 는 상호작용·브라우저 API·로컬 상태가 실제로 필요할 때만 붙인다.
-- **`generateStaticParams` 로 빌드 시 모든 slug 를 생성** → 콘텐츠 추가는 곧 코드 변경. CMS 가 아니다.
-- **frontmatter 는 `PostFrontmatterSchema`(zod) 로 런타임 검증된다** (`types/post.ts`). 필수 필드 누락이나 타입 불일치는 SSG/`getAllPosts` 단계에서 슬러그를 명시한 에러로 throw 되어 즉시 잡힌다 — 새 글 추가 시 빌드만 돌려도 검증된다.
-- **다크 테마가 root layout 에 고정** (`app/layout.tsx` 의 `<html className="dark">`). 토글이 필요해지면 별도 변경으로 분리한다.
-- **`packages/*` 는 아직 없다**. 두 번째 앱이 등장하기 전까지 공통화하지 말고 이 앱 안에 둔다 — `docs/ADR.md` 의 "두 번째 사용처" 원칙.
+```bash
+pnpm typecheck
+pnpm test
+pnpm lint
+pnpm build
+```
 
-## Dependencies / See also
+Windows에서 PowerShell 또는 Corepack 권한 때문에 `pnpm`이 막힐 수 있다. 그 경우 `pnpm.cmd`를 사용하거나 막힌 이유를 문서화한다.
 
-- 루트 가드레일: [`../../CLAUDE.md`](../../CLAUDE.md), [`../../AGENTS.md`](../../AGENTS.md), [`../../docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md), [`../../docs/ADR.md`](../../docs/ADR.md)
-- 워크스페이스 메타: [`../../pnpm-workspace.yaml`](../../pnpm-workspace.yaml), 루트 `package.json`
-- 외부 라이브러리: `next-mdx-remote`, `gray-matter`, `zod`, `shadcn/ui`, `next/font/google`
-- 테스트: `vitest` (`vitest.config.ts`, `lib/**/*.test.ts`)
+## 메모
+
+- Server Component가 기본이다.
+- 정적 MDX slug 페이지가 필요하면 `generateStaticParams`를 사용한다.
+- frontmatter 검증은 zod schema를 통해 명확히 실패해야 한다.
+- 현재 root layout은 `<html>`에 dark mode를 고정한다. theme toggle은 별도 기능으로 다룬다.
+- 실제 두 번째 사용처가 생기기 전에는 `packages/*` 추상화를 만들지 않는다.

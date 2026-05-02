@@ -15,44 +15,46 @@ type CalloutProps = { children: React.ReactNode; title?: string };
 export const mdxComponents = {
   h2: ({ children, ...props }: HeadingProps) => (
     <h2
-      className="font-headline-lg text-headline-lg mb-8 mt-16 text-secondary first:mt-0"
+      className="mb-8 mt-16 font-headline-lg text-headline-lg text-secondary first:mt-0"
       {...props}
     >
       {children}
     </h2>
   ),
   h3: ({ children, ...props }: HeadingProps) => (
-    <h3 className="font-headline-lg text-2xl mb-4 mt-10 text-on-surface" {...props}>
+    <h3 className="mb-4 mt-10 font-headline-lg text-2xl text-on-surface" {...props}>
       {children}
     </h3>
   ),
   p: ({ children, ...props }: ParaProps) => (
     <p
-      className="font-blog-content text-blog-content text-on-surface mb-6 leading-relaxed"
+      className="mb-6 font-blog-content text-blog-content leading-relaxed text-on-surface"
       {...props}
     >
       {children}
     </p>
   ),
   ul: ({ children, ...props }: ListProps) => (
-    <ul className="space-y-3 mb-6 list-none pl-0" {...props}>
+    <ul className="mb-6 space-y-3 pl-0" {...props}>
       {children}
     </ul>
   ),
   ol: ({ children, ...props }: ComponentPropsWithoutRef<"ol">) => (
-    <ol className="space-y-3 mb-6 list-none pl-0" {...props}>
+    <ol className="mb-6 list-decimal space-y-3 pl-6" {...props}>
       {children}
     </ol>
   ),
   li: ({ children, ...props }: ListItemProps) => (
     <li className="flex gap-3 font-blog-content text-blog-content text-on-surface" {...props}>
-      <span className="text-secondary shrink-0 mt-1">—</span>
+      <span className="mt-1 shrink-0 text-secondary" aria-hidden="true">
+        -
+      </span>
       <span>{children}</span>
     </li>
   ),
   blockquote: ({ children, ...props }: BlockquoteProps) => (
     <blockquote
-      className="font-blog-content text-blog-content text-on-surface my-12 italic opacity-80 border-l-2 border-white/10 pl-8 py-4"
+      className="my-12 border-l-2 border-border py-4 pl-8 font-blog-content text-blog-content italic text-on-surface-variant"
       {...props}
     >
       {children}
@@ -66,7 +68,7 @@ export const mdxComponents = {
   a: ({ href, children, ...props }: AnchorProps) => (
     <a
       href={href}
-      className="text-secondary underline underline-offset-4 hover:opacity-70 transition-opacity"
+      className="text-secondary underline underline-offset-4 transition-opacity hover:opacity-75"
       target={href?.startsWith("http") ? "_blank" : undefined}
       rel={href?.startsWith("http") ? "noopener noreferrer" : undefined}
       {...props}
@@ -77,14 +79,15 @@ export const mdxComponents = {
   code: ({ children, className, ...props }: CodeProps) => {
     if (className) {
       return (
-        <code className={`${className} text-zinc-300`} {...props}>
+        <code className={`${className} text-on-surface`} {...props}>
           {children}
         </code>
       );
     }
+
     return (
       <code
-        className="font-mono text-[0.875em] bg-surface-container-high text-secondary px-1.5 py-0.5 rounded"
+        className="rounded bg-surface-container-high px-1.5 py-0.5 font-mono text-[0.875em] text-secondary"
         {...props}
       >
         {children}
@@ -93,20 +96,20 @@ export const mdxComponents = {
   },
   pre: ({ children, ...props }: PreProps) => (
     <div className="mb-8">
-      <div className="bg-[#0e0e11] p-6 rounded-xl font-mono text-sm overflow-x-auto border border-white/5 shadow-2xl">
-        <pre className="text-zinc-300 whitespace-pre" {...props}>
+      <div className="overflow-x-auto rounded-md border border-border bg-surface-container p-6 font-mono text-sm">
+        <pre className="whitespace-pre text-on-surface" {...props}>
           {children}
         </pre>
       </div>
     </div>
   ),
-  hr: () => <hr className="border-white/10 my-12" />,
+  hr: () => <hr className="my-12 border-border" />,
   Callout: ({ children, title = "Insight" }: CalloutProps) => (
-    <div className="glass-card p-8 rounded-xl my-10 border-l-4 border-secondary-fixed">
+    <div className="my-10 rounded-md border border-border border-l-secondary bg-surface-container p-6">
       <div className="flex gap-4">
-        <Lightbulb className="text-secondary-fixed size-6 shrink-0 mt-0.5" />
+        <Lightbulb className="mt-0.5 size-6 shrink-0 text-secondary" />
         <div>
-          <h4 className="font-headline-lg text-lg mb-2 text-secondary-fixed">{title}</h4>
+          <h4 className="mb-2 font-headline-lg text-lg text-secondary">{title}</h4>
           <div className="font-body-md text-body-md text-on-surface-variant">{children}</div>
         </div>
       </div>

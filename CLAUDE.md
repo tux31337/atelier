@@ -1,48 +1,64 @@
 # Atelier
 
-Atelier는 한 명의 작업자가 여러 프론트엔드 프로젝트를 만들면서 매번 다른 셋업을 다시 깔지 않도록 하기 위한 워크스페이스다. 첫 결과물은 블로그이고, 이후의 앱들도 같은 디자인 토큰·같은 빌드 명령·같은 린트 규칙 위에서 돌아간다. 그래서 결정의 무게중심은 늘 "이 결정이 다음 앱에서도 합리적인가"에 있다.
+Atelier는 프론트엔드 작업을 위한 pnpm 모노레포다. 첫 제품 앱은 `apps/blog`의 블로그이며, 이후 앱도 같은 워크스페이스 구조, 같은 스크립트, 같은 배포 학습 흐름을 재사용한다.
 
-## 스택과, 그래서 주의할 점
+이 문서는 보조 문서다. 저장소 작업 규칙의 기준은 `AGENTS.md`다.
 
-- **Next.js 16 (App Router)** — 16은 비교적 최근 버전이라 라우팅·캐싱·`fetch` 동작·서버 액션·폰트·메타데이터 API 전반에 깨지는 변경이 있다. Next 코드를 만지기 전에는 학습한 기억이 아니라 `node_modules/next/dist/docs/`의 해당 문서를 먼저 본다.
-- **React 19** — Actions, `use`, ref가 prop이 된 것 등 패턴이 바뀌었다. 기본은 서버 컴포넌트, `"use client"`는 상호작용·브라우저 API·로컬 상태가 필요한 곳에서만 붙인다.
-- **TypeScript strict** — 회피용 `any`나 `as unknown as`는 쓰지 않는다. 타입을 좁힐 수 없으면 입력 경계 자체를 다시 잡는다.
-- **Tailwind v4 CSS-first** — `tailwind.config.{js,ts}`는 만들지 않는다. 토큰은 글로벌 CSS의 `@theme` 블록에 두고, 실제 공유가 필요해지면 그때 `packages/tailwind-config`로 옮긴다.
-- **pnpm 워크스페이스** — 의존성은 각 패키지에서 선언한다. 호이스팅에 의지하지 않는다. 락파일은 `pnpm` 명령으로만 바꾼다.
+## 스택과 주의점
 
-## 절대 어기지 말 것
+- **Next.js 16 App Router**: 예전 Next.js 지식과 다를 수 있다. 라우팅, metadata, font, cache, server action, config, 배포 동작을 바꾸기 전에는 설치된 `next/dist/docs` 문서를 확인한다.
+- **React 19**: 기본은 Server Component다. `"use client"`는 상호작용, 브라우저 API, 로컬 상태가 실제로 필요할 때만 붙인다.
+- **TypeScript strict**: `any`나 넓은 타입 단언을 피한다. 입력 경계에서 타입을 좁힌다.
+- **Tailwind CSS v4 CSS-first**: 토큰은 CSS의 `@theme`과 CSS 변수로 관리한다. 저장소 관례가 바뀌기 전에는 `tailwind.config.{js,ts}`를 추가하지 않는다.
+- **pnpm workspaces**: 설치, 스크립트, 의존성 변경은 pnpm을 사용한다. 다른 패키지 매니저 lockfile을 추가하지 않는다.
 
-- **의존 방향은 한쪽이다.** `apps/*`가 `packages/*`를 가져올 수 있지만 반대는 안 된다. 이게 깨지면 "공유 패키지가 특정 앱에 묶인 코드"가 되어 모노레포 의미가 사라진다.
-- **두 번째 진짜 사용처가 보이기 전까진 공유 패키지로 빼지 않는다.** 한 앱 안에서 두 군데 정도 쓰이는 건 그 앱의 로컬 컴포넌트로 둔다. 추상화는 늦게 할수록 정확해진다.
-- **글로벌 CSS는 최소로.** 리셋, 테마 토큰, 기본 타이포까지만. 페이지 단위 셀렉터를 글로벌에 쓰지 않는다.
-- **서버/클라이언트 경계는 의도적으로.** `"use client"`를 붙이는 이유가 코드에서 즉시 보여야 한다.
-- **`packages/ui`는 표현 계층만.** 라우팅·콘텐츠 로딩·앱별 데이터 형식을 알면 안 된다.
+## 언어 규칙
 
-## 구현할 때의 진행 방식
+문서, 작업 규칙, 설명 문구, 깃 커밋 메시지는 한국어로 작성한다.
 
-- **요청 범위 밖으로 나가지 않는다.** 옆에 보이는 어색한 코드도 이번 작업이 아니면 건드리지 않는다. 필요하면 별 변경으로 분리한다.
-- **TDD가 가능한 영역에선 테스트부터.** 콘텐츠 파싱·유틸·로직성 코드가 1순위. UI 자체는 시각적 회귀가 더 중요해서 무리하게 강제하지 않는다. 손대는 모듈에 테스트 인프라가 아예 없으면 그 셋업까지 같은 변경에 포함한다.
-- **검증 없이 끝났다고 말하지 않는다.** 마치기 전에 `pnpm lint`와 `pnpm typecheck`을 돌리고, 빌드 산출물에 영향이 있으면 `pnpm build`까지. 돌리지 못한 항목은 *왜* 못 돌렸는지를 명시한다.
-- **커밋은 Conventional Commits.** `feat:` `fix:` `docs:` `refactor:` `chore:` `test:`. 한 커밋이 여러 영역을 건드리면 분리할 수 있는지 먼저 본다.
-- **락파일·생성 파일은 손으로 안 고친다.** 의존성 변경은 `pnpm add` / `pnpm remove`로만.
+영어 문장을 새로 추가하지 않는다. 단, 코드 식별자, 파일 경로, 명령어, 패키지명, API 이름, 에러 메시지 원문, 외부 고유 명칭은 예외다.
 
-## 명령어
+깃 커밋 메시지는 제목과 본문 모두 한국어로 작성한다. 도구가 요구하는 접두어가 있을 때도 사람이 읽는 설명은 한국어로 쓴다.
 
-루트에서 실행한다.
+## 현재 상태
+
+- 블로그 제품 코드는 `apps/blog`에 있다.
+- 루트 파일은 워크스페이스와 문서를 조율한다.
+- `pnpm-workspace.yaml`은 `apps/*`, `packages/*`를 선언한다.
+- 아직 `packages/*`는 없다.
+- Docker, Docker Compose, Nginx, blue-green 배포 스크립트, CI/CD 워크플로는 아직 없다.
+
+## 경계
+
+- 앱은 공유 패키지를 import할 수 있다.
+- 공유 패키지는 앱을 import하지 않는다.
+- `packages/ui`가 생기면 표현 계층으로 유지한다.
+- 블로그 전용 라우팅, 콘텐츠 로딩, MDX 렌더링은 `apps/blog` 안에 둔다.
+- 실제 반복이 생기기 전에는 공유 코드로 추출하지 않는다.
+
+## 구현 지침
+
+- 요청 범위에 맞게 변경한다.
+- 먼저 앱 안에 구현하고, 재사용이 분명할 때만 `packages/*`로 올린다.
+- 전역 CSS는 reset, theme token, base typography, 정말 전역인 동작만 담는다.
+- 생성 파일이나 lockfile은 손으로 고치지 않는다. 의존성 변경은 pnpm으로 한다.
+- 루트 스크립트를 유지한다.
 
 ```bash
-pnpm dev        # 개발 서버
-pnpm build      # 프로덕션 빌드
-pnpm lint       # ESLint
-pnpm typecheck  # tsc --noEmit (스크립트 미연결, 하네스 정리 시 추가)
-pnpm test       # 테스트 (도입 예정)
+pnpm dev
+pnpm build
+pnpm lint
+pnpm typecheck
+pnpm test
 ```
 
-## 지금 저장소가 어떤 상태인가
+검증을 실행할 수 없으면 무엇이 막았는지 정확히 적는다.
 
-- 루트에 아직 Next.js 앱이 그대로 있다 (`app/`, `public/`, `next.config.ts`, `postcss.config.mjs`, `eslint.config.mjs`, `tsconfig.json`). `apps/blog/`는 만들어져 있지만 거의 비어 있다.
-- `pnpm-workspace.yaml`에 `packages:` 선언이 빠져 있어 워크스페이스가 실질적으로 활성화되지 않은 상태다.
-- `packages/*`는 아직 만들지 않았다.
-- `package.json`의 이름이 아직 `blog`다. 워크스페이스 루트 메타데이터로 바꿔야 한다.
+## 다음 작업 후보
 
-다음 변경에서 위 네 가지 중 일부라도 진행한다면, 한 커밋에 무리 없이 들어갈 만큼만 묶고 검증을 돌린다.
+1. `packages/ui`, `packages/tsconfig`, `packages/eslint-config`의 작은 골격을 만든다.
+2. `apps/blog` Docker 빌드 경로를 추가한다.
+3. 블로그 컨테이너용 로컬 Docker Compose를 추가한다.
+4. Nginx reverse proxy 설정을 추가한다.
+5. 컨테이너와 프록시 구조가 안정되면 blue-green 배포 스크립트를 추가한다.
+6. 로컬 명령이 안정화된 뒤 CI/CD를 추가한다.
