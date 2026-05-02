@@ -2,7 +2,7 @@
 
 ## 방향
 
-Atelier는 블로그를 첫 제품 앱으로 두고, 이후 앱을 같은 방식으로 추가할 수 있는 프론트엔드 모노레포입니다. 현재는 `apps/blog` 하나가 있는 상태이며, 공유 패키지는 아직 만들지 않았습니다.
+Atelier는 블로그를 첫 제품 앱으로 두고, 이후 앱을 같은 방식으로 추가할 수 있는 프론트엔드 모노레포입니다. 현재는 `apps/blog` 하나와 공유 TypeScript 설정 패키지 `packages/tsconfig`가 있는 상태입니다.
 
 원칙은 작게 시작하고, 실제 반복이 보일 때만 분리하는 것입니다. 처음부터 모든 공통 패키지를 채우기보다 앱 하나가 안정적으로 동작하고 배포 가능한 구조를 만든 뒤, 필요한 부분만 `packages/*`로 올립니다.
 
@@ -22,6 +22,8 @@ atelier/
       package.json
 
   docs/
+  packages/
+    tsconfig/
   scripts/
   package.json
   pnpm-workspace.yaml

@@ -41,7 +41,7 @@ packages/
   content/              # shared content utilities, if the blog needs extraction
 ```
 
-The `packages/*` directories have not been created yet. Add them deliberately as shared needs appear, starting with the smallest useful packages.
+Only `packages/tsconfig` exists today. Add the remaining shared packages deliberately as shared needs appear, starting with the smallest useful packages.
 
 ## Common Scripts
 
@@ -59,7 +59,7 @@ On Windows, if PowerShell blocks `pnpm`, use `pnpm.cmd` or fix the local executi
 
 ## Current Gaps
 
-- `packages/*` shared packages are still missing.
+- `packages/tsconfig` exists; `packages/ui` and `packages/eslint-config` are still missing.
 - Docker, Docker Compose, Nginx, and blue-green deployment files are not present yet.
 - GitHub Actions or other CI/CD workflows are not present yet.
 - Some documentation is intentionally lightweight and should evolve with the harness.
@@ -75,9 +75,9 @@ On Windows, if PowerShell blocks `pnpm`, use `pnpm.cmd` or fix the local executi
 
 ## Suggested Next Work
 
-1. Create the first shared package skeletons: `packages/ui`, `packages/tsconfig`, and `packages/eslint-config`.
-2. Add a Docker build path for `apps/blog`.
-3. Add a local Docker Compose setup for the blog container.
-4. Add Nginx reverse proxy configuration.
-5. Add a blue-green deployment script after the container/proxy shape is stable.
-6. Add CI once local build, test, and container commands are reliable.
+1. Create the `packages/eslint-config` skeleton.
+2. Create `packages/ui` only when there is a real shared component to move.
+3. Add a Docker build path for `apps/blog`.
+4. Add a local Docker Compose setup for the blog container.
+5. Add Nginx reverse proxy configuration.
+6. Add a blue-green deployment script after the container/proxy shape is stable.
