@@ -10,7 +10,7 @@ export default function HomePage() {
 
       {/* Floating node: Engineering (top-left) */}
       <div
-        className="absolute top-[20%] left-[15%] glass-card p-6 rounded-xl hover:bg-white/10 transition-all duration-500 cursor-pointer animate-pulse hidden lg:block"
+        className="absolute top-[20%] left-[15%] glass-card p-6 rounded-xl animate-pulse hidden lg:block"
         style={{ animationDuration: "4s" }}
       >
         <div className="flex flex-col gap-2">
@@ -22,7 +22,7 @@ export default function HomePage() {
 
       {/* Floating node: The Lab (top-right) */}
       <div
-        className="absolute top-[25%] right-[10%] glass-card p-6 rounded-xl hover:bg-white/10 transition-all duration-500 cursor-pointer animate-pulse hidden lg:block"
+        className="absolute top-[25%] right-[10%] glass-card p-6 rounded-xl animate-pulse hidden lg:block"
         style={{ animationDuration: "5s" }}
       >
         <div className="flex flex-col gap-2">
@@ -34,7 +34,7 @@ export default function HomePage() {
 
       {/* Floating node: Design (bottom-left) */}
       <div
-        className="absolute bottom-[20%] left-[10%] glass-card p-6 rounded-xl hover:bg-white/10 transition-all duration-500 cursor-pointer animate-pulse hidden lg:block"
+        className="absolute bottom-[20%] left-[10%] glass-card p-6 rounded-xl animate-pulse hidden lg:block"
         style={{ animationDuration: "6s" }}
       >
         <div className="flex flex-col gap-2">
@@ -64,7 +64,7 @@ export default function HomePage() {
             Bridging the gap between artistic vision and technical precision. I build
             high-performance web experiences with a focus on motion and 3D interaction.
           </p>
-          <div className="pt-8 flex gap-6 justify-center flex-wrap">
+          <div className="pt-8 flex justify-center">
             <Link
               href="/blog"
               className="bg-secondary text-on-secondary font-code-label text-code-label px-8 py-4 rounded-full hover:opacity-90 transition-all flex items-center gap-2 group"
@@ -72,28 +72,10 @@ export default function HomePage() {
               START JOURNEY
               <ArrowUpRight className="size-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
             </Link>
-            <button className="border border-white/20 text-zinc-100 font-code-label text-code-label px-8 py-4 rounded-full hover:bg-white/5 transition-all">
-              VIEW REEL
-            </button>
           </div>
         </div>
       </div>
 
-      {/* Floating technical stats (bottom-right) */}
-      <div className="absolute bottom-10 right-10 flex-col items-end gap-2 text-right hidden md:flex">
-        <div className="glass-card px-4 py-2 rounded-lg">
-          <span className="text-[10px] text-zinc-500 font-code-label uppercase block">
-            Current Engine
-          </span>
-          <span className="text-sm font-bold text-zinc-100">Next.js 16 + Three.js</span>
-        </div>
-        <div className="glass-card px-4 py-2 rounded-lg">
-          <span className="text-[10px] text-zinc-500 font-code-label uppercase block">
-            Active Repos
-          </span>
-          <span className="text-sm font-bold text-zinc-100">42 Contribution nodes</span>
-        </div>
-      </div>
     </section>
   );
 }

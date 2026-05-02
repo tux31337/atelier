@@ -90,41 +90,17 @@ export default async function PostPage({ params }: Props) {
         </div>
 
         {/* Tags */}
-        <div className="flex flex-wrap gap-3 pt-12 border-t border-white/5 mt-16">
+        <div className="flex flex-wrap gap-x-4 gap-y-2 pt-12 border-t border-white/5 mt-16">
           {post.tags.map((tag) => (
             <span
               key={tag}
-              className="px-4 py-2 bg-surface-container rounded-full text-xs font-code-label text-zinc-400 uppercase tracking-widest hover:bg-surface-container-high cursor-default transition-colors"
+              className="text-xs font-code-label text-zinc-500 uppercase tracking-widest"
             >
-              {tag}
+              #{tag}
             </span>
           ))}
         </div>
       </article>
-
-      {/* Newsletter */}
-      <section className="bg-surface-container-lowest py-24 border-t border-white/5">
-        <div className="max-w-4xl mx-auto px-6 md:px-12 text-center">
-          <h3 className="font-headline-lg text-headline-lg mb-4">Signal in the Noise</h3>
-          <p className="font-body-md text-body-md text-on-surface-variant mb-10 max-w-md mx-auto">
-            Deep dives into technical architecture, visual engineering, and the future of the
-            spatial web. Delivered monthly.
-          </p>
-          <form className="flex flex-col md:flex-row gap-4 max-w-lg mx-auto">
-            <input
-              type="email"
-              placeholder="email@studio.dev"
-              className="flex-grow bg-surface-container border-0 border-b-2 border-white/10 focus:border-secondary focus:outline-none text-white font-body-md px-4 py-4 transition-all"
-            />
-            <button
-              type="submit"
-              className="bg-secondary text-on-secondary px-8 py-4 font-code-label text-sm uppercase tracking-widest font-bold hover:opacity-90 active:scale-95 transition-all"
-            >
-              Join the Studio
-            </button>
-          </form>
-        </div>
-      </section>
     </main>
   );
 }
