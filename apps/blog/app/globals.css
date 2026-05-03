@@ -1,27 +1,8 @@
 @import "tailwindcss";
+@import "@atelier/tailwind-config/tokens.css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -36,26 +17,13 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 
-  --color-surface: var(--surface);
-  --color-on-surface: var(--on-surface);
-  --color-on-background: var(--on-background);
-  --color-surface-variant: var(--surface-variant);
-  --color-on-surface-variant: var(--on-surface-variant);
-  --color-surface-container: var(--surface-container);
   --color-surface-container-high: var(--surface-container-high);
   --color-surface-container-highest: var(--surface-container-highest);
   --color-surface-container-low: var(--surface-container-low);
   --color-surface-container-lowest: var(--surface-container-lowest);
-  --color-outline: var(--outline);
-  --color-outline-variant: var(--outline-variant);
   --color-on-primary: var(--on-primary);
   --color-primary-container: var(--primary-container);
   --color-on-primary-container: var(--on-primary-container);
@@ -72,45 +40,15 @@
   --color-error-container: var(--error-container);
   --color-on-error-container: var(--on-error-container);
 
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, monospace;
-  --font-heading: var(--font-space-grotesk), ui-sans-serif, sans-serif;
-  --font-headline-lg: var(--font-space-grotesk), ui-sans-serif, sans-serif;
-  --font-display-xl: var(--font-space-grotesk), ui-sans-serif, sans-serif;
   --font-blog-content: var(--font-newsreader), ui-serif, Georgia, serif;
-  --font-body-md: var(--font-inter), ui-sans-serif, sans-serif;
-  --font-code-label: var(--font-space-grotesk), ui-sans-serif, sans-serif;
-
-  --spacing-gutter: 24px;
-  --spacing-margin-safe: 40px;
-  --spacing-base: 8px;
 }
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --card: #ffffff;
-  --card-foreground: #171717;
-  --popover: #ffffff;
-  --popover-foreground: #171717;
-  --primary: #18181b;
-  --primary-foreground: #ffffff;
-  --secondary: #0f766e;
-  --secondary-foreground: #ffffff;
-  --muted: #f4f4f5;
-  --muted-foreground: #52525b;
-  --accent: #f4f4f5;
-  --accent-foreground: #18181b;
-  --destructive: #dc2626;
-  --border: #e4e4e7;
-  --input: #d4d4d8;
-  --ring: #71717a;
   --chart-1: #0f766e;
   --chart-2: #334155;
   --chart-3: #a16207;
   --chart-4: #7f1d1d;
   --chart-5: #4b5563;
-  --radius: 0.5rem;
   --sidebar: #fafafa;
   --sidebar-foreground: #18181b;
   --sidebar-primary: #18181b;
@@ -120,18 +58,10 @@
   --sidebar-border: #e4e4e7;
   --sidebar-ring: #71717a;
 
-  --surface: #ffffff;
-  --on-surface: #18181b;
-  --on-background: #18181b;
-  --surface-variant: #f4f4f5;
-  --on-surface-variant: #52525b;
-  --surface-container: #fafafa;
   --surface-container-high: #f4f4f5;
   --surface-container-highest: #e4e4e7;
   --surface-container-low: #ffffff;
   --surface-container-lowest: #ffffff;
-  --outline: #71717a;
-  --outline-variant: #d4d4d8;
   --on-primary: #ffffff;
   --primary-container: #e4e4e7;
   --on-primary-container: #18181b;
@@ -150,24 +80,6 @@
 }
 
 .dark {
-  --background: #131316;
-  --foreground: #e4e1e5;
-  --card: #1b1b1e;
-  --card-foreground: #e4e1e5;
-  --popover: #1b1b1e;
-  --popover-foreground: #e4e1e5;
-  --primary: #e4e1e5;
-  --primary-foreground: #18181b;
-  --secondary: #5eead4;
-  --secondary-foreground: #042f2e;
-  --muted: #252529;
-  --muted-foreground: #a1a1aa;
-  --accent: #252529;
-  --accent-foreground: #e4e1e5;
-  --destructive: #f87171;
-  --border: rgba(255, 255, 255, 0.1);
-  --input: rgba(255, 255, 255, 0.16);
-  --ring: #a1a1aa;
   --chart-1: #5eead4;
   --chart-2: #94a3b8;
   --chart-3: #facc15;
@@ -182,18 +94,10 @@
   --sidebar-border: rgba(255, 255, 255, 0.1);
   --sidebar-ring: #a1a1aa;
 
-  --surface: #131316;
-  --on-surface: #e4e1e5;
-  --on-background: #e4e1e5;
-  --surface-variant: #252529;
-  --on-surface-variant: #c7c6ca;
-  --surface-container: #1b1b1e;
   --surface-container-high: #252529;
   --surface-container-highest: #303033;
   --surface-container-low: #17171a;
   --surface-container-lowest: #0f0f12;
-  --outline: #a1a1aa;
-  --outline-variant: #3f3f46;
   --on-primary: #18181b;
   --primary-container: #303033;
   --on-primary-container: #e4e1e5;
@@ -211,51 +115,9 @@
   --on-error-container: #fee2e2;
 }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-
-  html {
-    @apply font-sans;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-  }
-}
-
-@utility text-display-xl {
-  font-size: 56px;
-  line-height: 1.05;
-  letter-spacing: 0;
-  font-weight: 700;
-}
-
-@utility text-headline-lg {
-  font-size: 32px;
-  line-height: 1.2;
-  letter-spacing: 0;
-  font-weight: 600;
-}
-
 @utility text-blog-content {
   font-size: 20px;
   line-height: 1.75;
   letter-spacing: 0;
   font-weight: 400;
-}
-
-@utility text-body-md {
-  font-size: 16px;
-  line-height: 1.6;
-  letter-spacing: 0;
-  font-weight: 400;
-}
-
-@utility text-code-label {
-  font-size: 14px;
-  line-height: 1.2;
-  letter-spacing: 0;
-  font-weight: 500;
 }
