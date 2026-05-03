@@ -1,6 +1,7 @@
 param(
   [string] $Image = "atelier-blog:test",
-  [switch] $Build
+  [switch] $Build,
+  [switch] $Pull
 )
 
 $ErrorActionPreference = "Stop"
@@ -83,6 +84,11 @@ $targetInclude = if ($targetSlot -eq "blue") { $blueFile } else { $greenFile }
 Write-Host "Current slot: $currentSlot"
 Write-Host "Target slot: $targetSlot"
 Write-Host "Image: $Image"
+
+if ($Pull) {
+  Write-Host "Pulling image: $Image"
+  Invoke-RootCommand -Arguments @("docker", "pull", $Image)
+}
 
 Write-Host "Starting target container: $targetContainer"
 $previousBlogImage = $env:BLOG_IMAGE

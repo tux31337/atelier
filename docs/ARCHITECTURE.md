@@ -37,7 +37,7 @@ atelier/
     tsconfig/
     ui/                 # 공유 Button, cn 등 표현 계층 원시 요소
   scripts/
-  docker-compose.yml    # blog-blue/blog-green + nginx 서비스
+  docker-compose.yml    # registry + blog-blue/blog-green + nginx 서비스
   package.json
   pnpm-workspace.yaml
 ```
@@ -108,7 +108,7 @@ pnpm test
 
 ## 배포 방향
 
-블로그 Dockerfile과 `docker-compose.yml`, Nginx reverse proxy, blue-green 슬롯용 include 파일, 로컬 배포 스크립트까지는 실습 수준으로 들어와 있고, 남은 단계는 이미지 레지스트리와 CI/CD 워크플로입니다. 현재 로컬 compose는 `blog-blue`, `blog-green`, `nginx`를 서비스로 두며, Nginx는 `infra/nginx/includes/blog-active.conf`를 include해 활성 슬롯을 바라봅니다. `pnpm deploy:blog:local`은 반대 슬롯을 실행하고 health check 후 active include 파일을 전환합니다. 기본 이미지는 `atelier-blog:test`이고, `scripts/deploy-blog-local.ps1 -Image 이미지명`으로 특정 이미지 태그를 배포할 수 있습니다. 목표 흐름은 다음과 같습니다.
+블로그 Dockerfile과 `docker-compose.yml`, Nginx reverse proxy, blue-green 슬롯용 include 파일, 로컬 배포 스크립트까지는 실습 수준으로 들어와 있고, 남은 단계는 CI/CD 워크플로입니다. 현재 로컬 compose는 `registry`, `blog-blue`, `blog-green`, `nginx`를 서비스로 두며, Nginx는 `infra/nginx/includes/blog-active.conf`를 include해 활성 슬롯을 바라봅니다. `pnpm deploy:blog:local`은 반대 슬롯을 실행하고 health check 후 active include 파일을 전환합니다. 기본 이미지는 `atelier-blog:test`이고, `scripts/deploy-blog-local.ps1 -Image 이미지명`으로 특정 이미지 태그를 배포할 수 있습니다. `-Pull`을 함께 주면 배포 전에 registry에서 이미지를 가져옵니다. 목표 흐름은 다음과 같습니다.
 
 ```txt
 코드 변경
