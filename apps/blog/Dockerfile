@@ -10,12 +10,15 @@ FROM base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/blog/package.json apps/blog/package.json
 COPY packages/eslint-config/package.json packages/eslint-config/package.json
+COPY packages/tailwind-config/package.json packages/tailwind-config/package.json
 COPY packages/tsconfig/package.json packages/tsconfig/package.json
+COPY packages/ui/package.json packages/ui/package.json
 RUN pnpm install --frozen-lockfile
 
 FROM base AS builder
 COPY --from=deps /repo/node_modules ./node_modules
 COPY --from=deps /repo/apps/blog/node_modules ./apps/blog/node_modules
+COPY --from=deps /repo/packages/ui/node_modules ./packages/ui/node_modules
 COPY . .
 RUN pnpm -F @atelier/blog build
 
