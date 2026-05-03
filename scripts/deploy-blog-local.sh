@@ -76,14 +76,12 @@ TARGET_CONTAINER="atelier-blog-$TARGET_SLOT"
 PREVIOUS_CONTAINER="atelier-blog-$CURRENT_SLOT"
 
 if [[ "$TARGET_SLOT" == "blue" ]]; then
-  TARGET_PORT=3001
   TARGET_INCLUDE="$BLUE_FILE"
 else
-  TARGET_PORT=3002
   TARGET_INCLUDE="$GREEN_FILE"
 fi
 
-TARGET_HEALTH_URL="http://127.0.0.1:$TARGET_PORT/api/health"
+TARGET_HEALTH_URL="http://$TARGET_SERVICE:3000/api/health"
 
 echo "Current slot: $CURRENT_SLOT"
 echo "Target slot: $TARGET_SLOT"
