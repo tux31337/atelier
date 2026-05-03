@@ -11,9 +11,10 @@
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "docker:blog:build": "docker build -f apps/blog/Dockerfile -t atelier-blog:test .",
-    "docker:blog:up": "docker compose up --build blog",
+    "docker:blog:blue:up": "docker compose up --build -d blog-blue",
+    "docker:blog:green:up": "docker compose up --build -d blog-green",
     "docker:blog:down": "docker compose down",
-    "docker:proxy:up": "docker compose up --build nginx",
+    "docker:proxy:up": "docker compose up --build -d nginx",
     "docker:proxy:down": "docker compose down"
   }
 }

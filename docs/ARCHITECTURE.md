@@ -30,13 +30,14 @@ atelier/
   infra/
     nginx/
       default.conf      # 로컬 reverse proxy 설정
+      includes/         # blue-green active upstream include 파일
   packages/
     eslint-config/
     tailwind-config/    # 공유 Tailwind v4 토큰
     tsconfig/
     ui/                 # 공유 Button, cn 등 표현 계층 원시 요소
   scripts/
-  docker-compose.yml    # blog + nginx 두 서비스
+  docker-compose.yml    # blog-blue/blog-green + nginx 서비스
   package.json
   pnpm-workspace.yaml
 ```
@@ -107,7 +108,7 @@ pnpm test
 
 ## 배포 방향
 
-블로그 Dockerfile과 `docker-compose.yml`, Nginx reverse proxy까지는 로컬 실습 수준으로 들어와 있고, 남은 단계는 공유 패키지를 포함한 컨테이너 빌드 검증, blue-green 배포 스크립트, CI/CD 워크플로입니다. 목표 흐름은 다음과 같습니다.
+블로그 Dockerfile과 `docker-compose.yml`, Nginx reverse proxy, blue-green 슬롯용 include 파일까지는 로컬 실습 수준으로 들어와 있고, 남은 단계는 blue-green 배포 스크립트와 CI/CD 워크플로입니다. 현재 로컬 compose는 `blog-blue`, `blog-green`, `nginx`를 서비스로 두며, Nginx는 `infra/nginx/includes/blog-active.conf`를 include해 활성 슬롯을 바라봅니다. 목표 흐름은 다음과 같습니다.
 
 ```txt
 코드 변경
@@ -121,4 +122,4 @@ pnpm test
   -> 이전 슬롯 중지
 ```
 
-초기 구현 순서는 `blog Dockerfile -> docker compose -> Nginx reverse proxy -> blue-green deploy script -> CI/CD`로 잡았고, 현재 세 번째 단계까지 진행돼 있습니다. `packages/ui`와 `packages/tailwind-config`가 생겼으므로 다음 컨테이너 작업에서는 Dockerfile의 workspace 패키지 복사 범위를 함께 확인합니다.
+초기 구현 순서는 `blog Dockerfile -> docker compose -> Nginx reverse proxy -> blue-green deploy script -> CI/CD`로 잡았고, 현재는 blue/green 슬롯과 Nginx include 전환의 뼈대까지 진행돼 있습니다. 다음 단계에서는 `apps/blog/app/api/health/route.ts`를 사용해 새 슬롯의 health check를 확인한 뒤 active include 파일을 바꾸는 배포 스크립트를 추가합니다.
