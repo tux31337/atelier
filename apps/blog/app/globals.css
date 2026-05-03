@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "@atelier/tailwind-config/tokens.css";
 @import "shadcn/tailwind.css";
+@source "../../../packages/ui";
 
 @theme inline {
   --color-chart-1: var(--chart-1);

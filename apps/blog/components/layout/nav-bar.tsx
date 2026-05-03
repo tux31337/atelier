@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Terminal } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@atelier/ui";
 
 const NAV_LINKS = [
   { label: "프로젝트", href: "/projects" },
