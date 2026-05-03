@@ -23,16 +23,18 @@ Atelier는 프론트엔드 작업을 위한 pnpm 모노레포다. 첫 제품 앱
 ## 현재 상태
 
 - 블로그 제품 코드는 `apps/blog`에 있다.
+- 두 번째 앱 자리인 `apps/truvis`가 있다. 현재는 공통 UI와 토큰을 검증하는 자리표시 앱이다.
 - 루트 파일은 워크스페이스와 문서를 조율한다.
 - `pnpm-workspace.yaml`은 `apps/*`, `packages/*`를 선언한다.
-- 현재 공유 패키지는 `packages/tsconfig`와 `packages/eslint-config`다. `packages/ui`는 빈 자리만 잡혀 있고 실제 공유 컴포넌트가 생기기 전까지 패키지로 채우지 않는다.
+- 현재 공유 패키지는 `packages/tsconfig`, `packages/eslint-config`, `packages/tailwind-config`, `packages/ui`다. `packages/ui`는 `Button`과 `cn`처럼 실제로 공유되는 작은 표현 계층부터 담는다.
 - 블로그 컨테이너 빌드(`apps/blog/Dockerfile`), 루트 `docker-compose.yml`, Nginx reverse proxy(`infra/nginx/default.conf`)까지 들어와 있다. blue-green 배포 스크립트와 CI/CD 워크플로는 아직 없다.
 
 ## 경계
 
 - 앱은 공유 패키지를 import할 수 있다.
 - 공유 패키지는 앱을 import하지 않는다.
-- `packages/ui`가 생기면 표현 계층으로 유지한다.
+- `packages/ui`는 표현 계층으로 유지한다.
+- `packages/tailwind-config`는 여러 앱에서 공유하는 Tailwind v4 토큰을 담는다.
 - 블로그 전용 라우팅, 콘텐츠 로딩, MDX 렌더링은 `apps/blog` 안에 둔다.
 - 실제 반복이 생기기 전에는 공유 코드로 추출하지 않는다.
 
@@ -56,6 +58,7 @@ pnpm test
 
 ## 다음 작업 후보
 
-1. `packages/ui`는 실제 공유 컴포넌트가 생길 때 최소 범위로 만든다. 그 전까지는 빈 디렉터리를 정리하거나 그대로 둔다.
-2. 컨테이너와 프록시 구조가 안정됐으니 blue-green 배포 스크립트를 추가한다.
-3. blue-green 흐름이 잡히면 lint/typecheck/test/build와 이미지 빌드를 묶는 CI/CD 워크플로를 추가한다.
+1. 문서와 실제 구조가 어긋나지 않게 유지한다. 새 앱이나 공유 패키지를 추가하면 `AGENTS.md`, 앱별 `CLAUDE.md`, `docs/*`를 함께 갱신한다.
+2. 블로그 Dockerfile이 `packages/ui`와 `packages/tailwind-config`를 포함해 빌드되는지 확인하고 필요하면 deps 단계 복사 범위를 정리한다.
+3. 컨테이너와 프록시 구조가 안정됐으니 blue-green 배포 스크립트를 추가한다.
+4. blue-green 흐름이 잡히면 lint/typecheck/test/build와 이미지 빌드를 묶는 CI/CD 워크플로를 추가한다.

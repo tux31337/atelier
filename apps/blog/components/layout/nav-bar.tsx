@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Terminal } from "lucide-react";
-import { cn } from "@atelier/ui";
+import { Button, cn } from "@atelier/ui";
 
 const NAV_LINKS = [
   { label: "프로젝트", href: "/projects" },
@@ -47,12 +47,14 @@ export function NavBar() {
         </div>
 
         <div className="flex items-center gap-4">
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             aria-label="Terminal"
-            className="flex items-center justify-center rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="text-muted-foreground"
           >
             <Terminal className="size-5" />
-          </button>
+          </Button>
 
           <div className="flex size-8 items-center justify-center rounded-md border border-border bg-surface-container">
             <span className="font-code-label text-xs font-semibold text-muted-foreground">

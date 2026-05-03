@@ -12,14 +12,15 @@ Atelier 블로그의 UI는 글과 작업물을 편하게 읽기 위한 조용한
 - 레이아웃은 넓게 띄우기보다 읽기 좋은 폭과 명확한 간격을 우선한다.
 - 색상은 CSS 변수와 Tailwind 토큰을 통해 사용한다.
 - 앱 전용 스타일은 `apps/blog` 안에 둔다.
-- 여러 앱에서 실제 반복이 생긴 토큰과 컴포넌트만 `packages/*`로 올린다.
+- 여러 앱에서 실제 반복이 생긴 토큰은 `packages/tailwind-config`, 컴포넌트와 UI 원시 요소는 `packages/ui`로 올린다.
 - `docs/design/*.html`은 과거 시안 보관용이다. 현재 구현 기준으로 사용하지 않는다.
 
 ## Tailwind CSS
 
 Tailwind CSS v4의 CSS-first 방식을 사용한다.
 
-- 전역 토큰은 `apps/blog/app/globals.css`의 `@theme`과 CSS 변수로 관리한다.
+- 공유 토큰은 `packages/tailwind-config/tokens.css`의 `@theme`과 CSS 변수로 관리한다.
+- 블로그 전용 토큰은 `apps/blog/app/globals.css`에 둔다.
 - `tailwind.config.{js,ts}`를 새로 만들지 않는다.
 - 전역 CSS에는 reset, theme token, 기본 타이포그래피, 정말 공통인 유틸리티만 둔다.
 - 페이지 전용 장식 유틸리티는 전역 CSS에 만들지 않는다.
@@ -42,9 +43,9 @@ Tailwind CSS v4의 CSS-first 방식을 사용한다.
 
 ## 컴포넌트
 
-현재 컴포넌트는 `apps/blog/components`에 둔다. `packages/ui`는 아직 없다.
+현재 블로그 전용 컴포넌트는 `apps/blog/components`에 둔다. 공유 컴포넌트와 UI 원시 요소는 `packages/ui`에 둔다.
 
-공유 패키지 후보:
+현재 공유 패키지에 둘 수 있는 것:
 
 - 여러 앱에서 같은 의미로 쓸 버튼 primitive.
 - 공통 레이아웃 primitive.
