@@ -13,12 +13,10 @@ COPY packages/eslint-config/package.json packages/eslint-config/package.json
 COPY packages/tailwind-config/package.json packages/tailwind-config/package.json
 COPY packages/tsconfig/package.json packages/tsconfig/package.json
 COPY packages/ui/package.json packages/ui/package.json
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --filter @atelier/blog...
 
 FROM base AS builder
-COPY --from=deps /repo/node_modules ./node_modules
-COPY --from=deps /repo/apps/blog/node_modules ./apps/blog/node_modules
-COPY --from=deps /repo/packages/ui/node_modules ./packages/ui/node_modules
+COPY --from=deps /repo ./
 COPY . .
 RUN pnpm -F @atelier/blog build
 
