@@ -13,6 +13,7 @@ node_modules
 !.yarn/releases
 !.yarn/versions
 pnpm-store/
+.corepack/
 
 # build output
 .next/

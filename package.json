@@ -9,6 +9,9 @@
     "start": "pnpm -F @atelier/blog start",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r test"
+    "test": "pnpm -r test",
+    "docker:blog:build": "docker build -f apps/blog/Dockerfile -t atelier-blog:test .",
+    "docker:blog:up": "docker compose up --build blog",
+    "docker:blog:down": "docker compose down"
   }
 }

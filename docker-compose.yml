@@ -1,0 +1,13 @@
+services:
+  blog:
+    container_name: atelier-blog
+    image: atelier-blog:test
+    build:
+      context: .
+      dockerfile: apps/blog/Dockerfile
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+    ports:
+      - "3000:3000"
