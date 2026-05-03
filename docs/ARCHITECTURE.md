@@ -108,7 +108,7 @@ pnpm test
 
 ## 배포 방향
 
-블로그 Dockerfile과 `docker-compose.yml`, Nginx reverse proxy, blue-green 슬롯용 include 파일까지는 로컬 실습 수준으로 들어와 있고, 남은 단계는 blue-green 배포 스크립트와 CI/CD 워크플로입니다. 현재 로컬 compose는 `blog-blue`, `blog-green`, `nginx`를 서비스로 두며, Nginx는 `infra/nginx/includes/blog-active.conf`를 include해 활성 슬롯을 바라봅니다. 목표 흐름은 다음과 같습니다.
+블로그 Dockerfile과 `docker-compose.yml`, Nginx reverse proxy, blue-green 슬롯용 include 파일, 로컬 배포 스크립트까지는 실습 수준으로 들어와 있고, 남은 단계는 이미지 레지스트리와 CI/CD 워크플로입니다. 현재 로컬 compose는 `blog-blue`, `blog-green`, `nginx`를 서비스로 두며, Nginx는 `infra/nginx/includes/blog-active.conf`를 include해 활성 슬롯을 바라봅니다. `pnpm deploy:blog:local`은 반대 슬롯을 실행하고 health check 후 active include 파일을 전환합니다. 기본 이미지는 `atelier-blog:test`이고, `scripts/deploy-blog-local.ps1 -Image 이미지명`으로 특정 이미지 태그를 배포할 수 있습니다. 목표 흐름은 다음과 같습니다.
 
 ```txt
 코드 변경
@@ -122,4 +122,4 @@ pnpm test
   -> 이전 슬롯 중지
 ```
 
-초기 구현 순서는 `blog Dockerfile -> docker compose -> Nginx reverse proxy -> blue-green deploy script -> CI/CD`로 잡았고, 현재는 blue/green 슬롯과 Nginx include 전환의 뼈대까지 진행돼 있습니다. 다음 단계에서는 `apps/blog/app/api/health/route.ts`를 사용해 새 슬롯의 health check를 확인한 뒤 active include 파일을 바꾸는 배포 스크립트를 추가합니다.
+초기 구현 순서는 `blog Dockerfile -> docker compose -> Nginx reverse proxy -> blue-green deploy script -> CI/CD`로 잡았고, 현재는 로컬 blue-green 배포 스크립트까지 진행돼 있습니다. 다음 단계에서는 Jenkins가 이미지 빌드, 레지스트리 push, 배포 서버의 스크립트 실행을 맡도록 CI/CD 흐름을 분리합니다.

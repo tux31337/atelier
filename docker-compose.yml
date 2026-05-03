@@ -2,8 +2,6 @@ services:
   nginx:
     container_name: atelier-nginx
     image: nginx:1.27-alpine
-    depends_on:
-      - blog-blue
     ports:
       - "8080:80"
     volumes:
@@ -12,7 +10,7 @@ services:
 
   blog-blue:
     container_name: atelier-blog-blue
-    image: atelier-blog:test
+    image: ${BLOG_IMAGE:-atelier-blog:test}
     build:
       context: .
       dockerfile: apps/blog/Dockerfile
@@ -25,7 +23,7 @@ services:
 
   blog-green:
     container_name: atelier-blog-green
-    image: atelier-blog:test
+    image: ${BLOG_IMAGE:-atelier-blog:test}
     build:
       context: .
       dockerfile: apps/blog/Dockerfile

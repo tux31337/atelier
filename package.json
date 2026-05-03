@@ -14,7 +14,8 @@
     "docker:blog:blue:up": "docker compose up --build -d blog-blue",
     "docker:blog:green:up": "docker compose up --build -d blog-green",
     "docker:blog:down": "docker compose down",
-    "docker:proxy:up": "docker compose up --build -d nginx",
-    "docker:proxy:down": "docker compose down"
+    "docker:proxy:up": "docker compose up --build -d blog-blue blog-green nginx",
+    "docker:proxy:down": "docker compose down",
+    "deploy:blog:local": "powershell -ExecutionPolicy Bypass -File scripts/deploy-blog-local.ps1"
   }
 }
