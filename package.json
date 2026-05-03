@@ -17,6 +17,8 @@
     "docker:registry:up": "docker compose up -d registry",
     "docker:proxy:up": "docker compose up --build -d blog-blue blog-green nginx",
     "docker:proxy:down": "docker compose down",
+    "jenkins:up": "docker compose -f docker-compose.jenkins.yml up --build -d",
+    "jenkins:down": "docker compose -f docker-compose.jenkins.yml down",
     "deploy:blog:local": "powershell -ExecutionPolicy Bypass -File scripts/deploy-blog-local.ps1"
   }
 }

@@ -28,6 +28,8 @@ atelier/
 
   docs/
   infra/
+    jenkins/
+      Dockerfile        # Docker/Node/pnpm을 포함한 Jenkins 실습 이미지
     nginx/
       default.conf      # 로컬 reverse proxy 설정
       includes/         # blue-green active upstream include 파일
@@ -37,6 +39,7 @@ atelier/
     tsconfig/
     ui/                 # 공유 Button, cn 등 표현 계층 원시 요소
   scripts/
+  docker-compose.jenkins.yml # Jenkins 실습 컨테이너
   docker-compose.yml    # registry + blog-blue/blog-green + nginx 서비스
   package.json
   pnpm-workspace.yaml
@@ -122,4 +125,4 @@ pnpm test
   -> 이전 슬롯 중지
 ```
 
-초기 구현 순서는 `blog Dockerfile -> docker compose -> Nginx reverse proxy -> blue-green deploy script -> CI/CD`로 잡았고, 현재는 로컬 blue-green 배포 스크립트까지 진행돼 있습니다. 다음 단계에서는 Jenkins가 이미지 빌드, 레지스트리 push, 배포 서버의 스크립트 실행을 맡도록 CI/CD 흐름을 분리합니다.
+초기 구현 순서는 `blog Dockerfile -> docker compose -> Nginx reverse proxy -> blue-green deploy script -> CI/CD`로 잡았고, 현재는 로컬 blue-green 배포 스크립트까지 진행돼 있습니다. Jenkins 실습 환경은 `docker-compose.jenkins.yml`과 `infra/jenkins/Dockerfile`로 관리합니다. Jenkins 이미지는 Docker CLI, Docker Compose plugin, Node.js, pnpm을 포함하고, Docker socket을 연결해 Jenkins 컨테이너 안에서 블로그 이미지를 빌드할 수 있게 합니다. Jenkins 설정은 수동 실행 때 만든 `jenkins_home` Docker volume을 그대로 사용합니다. Jenkins는 `Jenkinsfile`에서 루트 검증 명령을 실행한 뒤 커밋 해시 기반 블로그 이미지를 만들고, registry에 push합니다. `START_LOCAL_REGISTRY` 파라미터를 켜면 실습용 registry 컨테이너도 Jenkins가 함께 실행합니다. `DEPLOY_LOCAL` 파라미터를 켜면 같은 이미지 태그를 환경에 맞는 로컬 배포 스크립트에 넘겨 blue-green 배포까지 이어서 검증합니다. Windows에서는 `scripts/deploy-blog-local.ps1`, Linux Jenkins 에이전트에서는 `scripts/deploy-blog-local.sh`를 사용합니다. 실제 서버 배포 단계에서는 로컬 스크립트를 그대로 원격 실행하거나, 같은 슬롯 전환 규칙을 따르는 서버용 스크립트로 분리합니다.
