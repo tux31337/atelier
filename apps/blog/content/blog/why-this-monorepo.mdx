@@ -1,0 +1,269 @@
+---
+title: "이 모노레포는 왜 이 모양인가"
+date: "2026-05-01"
+category: "Monorepo"
+excerpt: "한 명이 여러 프론트엔드 프로젝트를 굴리려고 atelier를 모노레포로 잡았다. 이 글은 왜 그렇게 정했는지, 그 결정이 지금 코드의 어느 줄에 박혀 있는지를 거꾸로 짚는다."
+tags: ["Monorepo", "pnpm", "Workspace", "Atelier"]
+featured: true
+---
+
+atelier는 한 명이 여러 프론트엔드 프로젝트를 만들면서 매번 다른 셋업을 다시 깔지 않으려고 만든 워크스페이스다. 첫 결과물은 블로그이고, 이후의 앱들도 같은 디자인 토큰·같은 빌드 명령·같은 린트 규칙 위에서 돌아간다. 그래서 결정의 무게중심은 늘 "이게 다음 앱에서도 합리적인가"에 있다.
+
+이 글은 그 결정들이 지금 저장소 어디에 박혀 있는지를 거꾸로 짚는다. 코드를 다 짠 다음에 정리한 글이라기보다, 만들어진 모양이 *왜 이 모양인지*를 한 번 더 따라가는 글에 가깝다. 네 가지 결정을 하나씩 본다 — pnpm workspace, 루트와 앱의 역할 분담, 스크립트 위임, 그리고 `packages/*`를 비워둔 이유.
+
+글 전체에서 가정 하나를 두텁게 깐다. atelier에 두 앱이 *이미 있다고* 보자 — `apps/blog`(Next로 만든 글 사이트)와 `apps/playground`(Vite로 만든 실험용 앱). 둘은 같은 React 19를 쓰고, 같은 카드 UI를 공유하고, 같은 색·간격·폰트 토큰 위에서 돈다. 실제로 atelier가 지금 가진 건 `apps/blog` 하나뿐이지만, *결정들은 처음부터 이 그림을 가정하고 잡혔다*. 그래야 두 번째 앱이 들어오는 순간 다시 갈아엎지 않아도 된다.
+
+## pnpm workspace가 풀어주는 문제
+
+워크스페이스를 켜기 전이라고 해보자. 두 앱이 *별개의 npm 프로젝트*인 셈이다. 이대로면 두 가지가 어색해진다.
+
+**첫째, 의존성이 분산된다.** `apps/blog`(Next)와 `apps/playground`(Vite)는 둘 다 React 19를 쓴다. 워크스페이스가 없으면 둘은 서로 모르는 두 프로젝트라 React 19를 *두 벌* 받는다. 디스크와 설치 시간이 두 배인 것도 문제지만, 더 곤란한 건 *조용히 버전이 어긋나는* 경우다 — 어느 날 `playground`만 React 19.0.x로, `blog`만 19.2.x로 깔려 있는 상황. 한 워크스페이스 안에 묶이면 pnpm이 같은 패키지를 한 번만 풀어 두 앱에 공유하고, 충돌이 나면 명시적으로 알려준다.
+
+**둘째, 앱끼리 서로를 import하기 어렵다.** 두 앱이 같은 카드 UI를 공유하려면 그 코드는 어딘가에 *한 번만* 존재하고 양쪽이 거기서 가져와야 한다. 자연스러운 자리는 `packages/ui`다. 워크스페이스가 없으면 `packages/ui`를 npm 레지스트리에 올리거나 상대경로(`../../packages/ui/src/...`)로 끌어와야 한다. 워크스페이스 안이라면 두 앱의 `package.json`에 이 한 줄을 더하는 걸로 끝난다.
+
+```json
+"@atelier/ui": "workspace:*"
+```
+
+pnpm이 설치 시점에 각 앱의 `node_modules/@atelier/ui`를 로컬의 `packages/ui` 폴더로 심볼릭 링크해주고, 코드에서는 `import { Button } from "@atelier/ui"`가 그대로 동작한다. `packages/ui`를 고치면 두 앱에 즉시 반영된다 — 별도의 publish/install 단계가 없다.
+
+이 스위치는 `pnpm-workspace.yaml`의 이 부분에 박혀 있다.
+
+```yaml
+packages:
+  - apps/*
+  - packages/*
+```
+
+이 두 줄이 없으면 atelier는 그냥 폴더이고, pnpm은 루트만 하나의 프로젝트로 본다. 있으면 `apps/*`와 `packages/*` 아래의 모든 `package.json`이 하나의 의존성 그래프로 묶인다. 모노레포의 본질은 폴더 정리가 아니라 *의존성 그래프를 하나로 묶는 것*이고, 이 두 줄이 그 시작점이다.
+
+## 루트와 앱은 무엇을 나눠 갖나
+
+루트 `package.json`을 열어보면 이렇게 생겼다.
+
+```json
+{
+  "name": "atelier",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "dev": "pnpm -F @atelier/blog dev",
+    "build": "pnpm -r build",
+    "start": "pnpm -F @atelier/blog start",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck"
+  }
+}
+```
+
+특이한 점은 `dependencies`와 `devDependencies`가 아예 없다는 것이다. Next도, React도, ESLint도 여기 없다. 모두 `apps/blog/package.json` 안에 있다 (그리고 `apps/playground/package.json` 안에도). 처음 보면 어색할 수 있지만, 이건 세 가지 결정의 결과다.
+
+**의존성의 주인을 명확히 한다.** `apps/blog`는 Next로 돌고, `apps/playground`는 Vite로 돈다. 둘이 쓰는 빌드 도구가 다르다는 건 *공유되지 않는 의존성*이 있다는 뜻이다. 의존성을 *그걸 실제로 쓰는 패키지에* 두면, 패키지 단위로 빌드·배포할 때 무엇이 필요한지가 자명해진다. 이건 EC2에 컨테이너로 올릴 때 곧장 영향을 미친다 — `apps/blog`만 빌드하는 도커 이미지가 `playground`의 Vite 같은 무관한 의존성까지 끌어오면 이미지가 불필요하게 무거워지기 때문이다.
+
+**호이스팅에 의지하지 않는다.** 의존성을 *어디에 적느냐*가 중요한 두 번째 이유는, 패키지 매니저의 *호이스팅* 동작이 만드는 함정 때문이다. npm이나 yarn(클래식)은 디스크를 아끼려고 의존성을 가능한 한 한 곳(`node_modules` 최상위)으로 끌어올린다. 그러면 이런 일이 생긴다.
+
+`apps/blog/package.json`에 이렇게만 적혀 있다고 하자.
+
+```json
+{
+  "dependencies": {
+    "react-helmet": "^6.1.0"
+  }
+}
+```
+
+그런데 코드에서는 lodash까지 import한다.
+
+```ts
+import _ from "lodash";
+import Helmet from "react-helmet";
+```
+
+npm 환경에서는 *이게 그냥 동작한다*. 왜냐하면 `react-helmet`이 lodash에 의존하고, 호이스팅으로 lodash가 최상위 `node_modules`에 깔리면서 누구든 import할 수 있게 됐기 때문이다. 내 `package.json`엔 적힌 적 없는 라이브러리지만 *보이긴 한다* — 이걸 **phantom dependency**라고 부른다.
+
+문제는 어느 날 `react-helmet`이 새 버전에서 lodash를 쓰지 않게 바뀌거나, 다른 라이브러리로 갈아탈 때 터진다. 호이스팅된 lodash가 사라지고, 내 코드의 `import _ from "lodash"`는 `Module not found`로 갑자기 깨진다. *내 코드는 한 줄도 바꾸지 않았는데* 빌드가 깨진다.
+
+**pnpm은 이 모델을 정반대로 잡는다.** 각 패키지의 `node_modules`에는 그 패키지가 *직접 선언한* 의존성만 심볼릭 링크로 놓고, 나머지는 `node_modules/.pnpm/...` 안에 격리한다. 같은 상황을 pnpm에서 보면 디렉토리 구조가 이렇게 된다.
+
+```
+apps/blog/node_modules/
+├─ react-helmet → ../../node_modules/.pnpm/react-helmet@6.1.0/node_modules/react-helmet
+└─ (lodash 없음 — package.json에 안 적혀 있으니까)
+
+node_modules/.pnpm/
+├─ react-helmet@6.1.0/node_modules/
+│   ├─ react-helmet/
+│   └─ lodash → ../../lodash@4.17.21/node_modules/lodash
+└─ lodash@4.17.21/node_modules/lodash/
+```
+
+`apps/blog/node_modules`에는 *내가 직접 적은 것만* 보인다. lodash는 `react-helmet`이 자기 안에서 보고 쓸 수 있을 뿐, `apps/blog`의 코드에서는 안 보인다. 그래서 위의 `import _ from "lodash"`는 *처음부터 바로* 깨진다 — 운영 환경에서 어느 날 갑자기가 아니라, 첫 install 직후에. 이게 phantom dependency가 *구조적으로* 차단된다는 의미다.
+
+쓰는 패키지마다 의존성을 명시적으로 선언한다는 원칙은, 결국 pnpm이 디렉토리 수준에서 강제하는 모델과 같은 방향을 본다.
+
+**루트는 지휘자다.** 루트에 남는 건 워크스페이스 메타데이터(`name`, `private`, `packageManager`)와 *명령을 어디로 흘려보낼지*뿐이다. `pnpm@9.0.0`을 `packageManager` 필드로 못 박은 것도 같은 맥락이다 — 모든 워크스페이스가 같은 pnpm 버전으로 돌아야 락파일이 안정적이기 때문이다.
+
+루트가 의존성을 갖지 않는 건 단순한 미니멀리즘이 아니다. *의존성의 주인을 명확히* 해서 패키지 단위 빌드와 배포가 가능하게 만드는 결정이다.
+
+## 루트 스크립트는 명령의 분배기다
+
+루트 `package.json`의 스크립트에는 두 가지 실행 패턴이 섞여 있다.
+
+```json
+"dev":       "pnpm -F @atelier/blog dev",
+"build":     "pnpm -r build",
+"start":     "pnpm -F @atelier/blog start",
+"lint":      "pnpm -r lint",
+"typecheck": "pnpm -r typecheck"
+```
+
+**`-F` (filter)**: `--filter`의 줄임. 워크스페이스 *하나*를 골라 그 안에서 명령을 돌린다. `pnpm -F @atelier/blog dev`는 오직 `@atelier/blog` 패키지의 `dev` 스크립트만 실행한다.
+
+**`-r` (recursive)**: 모든 워크스페이스를 돌면서 같은 이름의 스크립트를 실행한다. `pnpm -r build`는 `apps/*`와 `packages/*` 아래의 모든 `package.json`에서 `build` 스크립트가 정의돼 있으면 다 돈다 — 정의돼 있지 않은 패키지는 건너뛴다.
+
+**그래서 왜 둘이 섞여 있냐면**:
+
+- `dev`와 `start`는 *한 번에 한 앱*만 띄운다. 두 앱을 동시에 띄우는 건 별도 터미널의 일이지 한 명령으로 묶일 일이 아니다. 그래서 `-F`로 *어느 앱인지* 명시적으로 골라 띄운다.
+- `build`, `lint`, `typecheck`은 *모든 워크스페이스에 다 적용*되어야 한다. CI에서 `pnpm build` 한 번이면 모든 앱·패키지가 빌드되어야 하고, 어느 하나라도 lint나 typecheck이 깨지면 곧장 알려야 한다. 그래서 `-r`.
+
+**위임의 효과**: 루트에서는 `pnpm dev`가 *무엇을* 하는지의 세부를 모른다. 그저 `@atelier/blog`의 `dev`로 명령을 흘려보낼 뿐이다. 실제 실행은 앱 자신의 `package.json`에 적혀 있다.
+
+```json
+// apps/blog/package.json
+{
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit"
+  }
+}
+```
+
+`apps/playground`의 경우 그쪽 `package.json`에는 `"dev": "vite"`가 적혀 있다. 루트는 그게 Next인지 Vite인지 *모른다* — 그저 워크스페이스 이름만 알고 명령을 흘려보낸다. 새 앱이 추가될 때마다 루트 스크립트를 새로 쓰지 않아도 되고, 앱 안에서 빌드 도구를 갈아탈 때도 루트는 그대로다.
+
+**두 앱 환경에서의 dev 명령**: 지금 루트의 `dev`는 `pnpm -F @atelier/blog dev`로 *blog만* 띄우게 박혀 있다. 두 앱이 있는 환경에서 `pnpm dev` 한 줄만 두면 *어느 앱을 띄울지*가 모호해진다. 가장 흔한 처리는 스크립트를 분리하는 것이다.
+
+```json
+"dev:blog":       "pnpm -F @atelier/blog dev",
+"dev:playground": "pnpm -F @atelier/playground dev",
+```
+
+이러면 `pnpm dev:blog`, `pnpm dev:playground`로 명시적으로 골라 띄울 수 있다. 두 앱을 *동시에* 띄우는 건 보통 별도 터미널의 몫이지 한 명령으로 묶을 일이 아니다.
+
+atelier가 지금 갖고 있는 건 `apps/blog` 하나라 `dev` 한 줄로 충분하지만, 두 번째 앱이 들어오면 위 형태로 자연스럽게 옮긴다.
+
+루트의 스크립트는 결국 *명령의 분배기*다. `-F`로 한 앱에 꽂고 `-r`로 전부에 흘리는 두 패턴만 알면, 앱이 늘어나도 루트의 모양은 거의 바뀌지 않는다.
+
+## 공유 패키지는 언제, 어떻게 만드나
+
+위에서 깐 가정으로 돌아오자 — `apps/blog`와 `apps/playground`는 같은 카드 UI와 디자인 토큰을 공유하고 싶다. 이 상황에서 `packages/*`는 *언제* 만들어지고 *어떻게* 생겼는가.
+
+### 언제: 두 번째 진짜 사용처가 나타날 때
+
+추상화는 늦게 할수록 정확하다. `apps/blog` 안에서 두 번 쓰이는 카드 컴포넌트를 보고 "공유 패키지로 빼자"고 결정하면, 두 사용처가 *같은 앱 안의 같은 디자인 언어*에서 나왔기 때문에 사실상 거의 같은 모양이다. 그걸 추출해도 "blog의 카드"가 될 뿐, "atelier 전체의 카드"가 되지 않는다. 진짜 공유 가치는 *두 번째 앱(`apps/playground`)이 같은 카드를 원하는 순간* 검증된다 — 두 앱이 같은 컴포넌트를 원하는 시점에서야 둘의 *진짜 공통점*이 드러난다.
+
+잘못된 추상화는 되돌리기 어렵다. `packages/ui`로 한 번 빼두면 그게 *공유 API*가 된다. 나중에 "사실 playground는 이 카드를 다른 모양으로 원하더라"가 발견되면, 패키지 안에 분기를 넣거나 빼낸 컴포넌트를 다시 앱으로 끌어와야 한다. 둘 다 만만찮은 작업이다. *아직 빼지 않은* 코드는 그저 코드일 뿐이고, 옮기는 건 `git mv` 한 번이다.
+
+그래서 원칙은 단순하다 — **두 번째 진짜 사용처가 보이기 전까진 공유 패키지로 빼지 않는다.** 한 앱 안에서 두 군데 쓰이는 컴포넌트는 그 앱의 로컬 컴포넌트로 둔다. 추상화 시점을 뒤로 미루는 결정이지, 게으른 결정이 아니다.
+
+### 어떻게: React 컴포넌트 공유
+
+두 번째 사용처가 나타났다고 하자. `apps/blog`와 `apps/playground` 둘 다 같은 카드를 쓴다. 이제 `packages/ui`로 옮길 시점이다. 그 모양은 이렇다.
+
+```json
+// packages/ui/package.json
+{
+  "name": "@atelier/ui",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "peerDependencies": {
+    "react": "^19"
+  }
+}
+```
+
+```ts
+// packages/ui/src/index.ts
+export { Card } from "./card";
+export { Button } from "./button";
+```
+
+각 앱의 `package.json`에 의존성을 명시한다.
+
+```json
+// apps/blog/package.json (그리고 apps/playground/package.json도 동일)
+"dependencies": {
+  "@atelier/ui": "workspace:*"
+}
+```
+
+코드에서는 그냥 import한다.
+
+```tsx
+// apps/blog/app/page.tsx
+import { Card } from "@atelier/ui";
+```
+
+pnpm이 `apps/blog/node_modules/@atelier/ui`를 로컬 `packages/ui` 폴더로 심볼릭 링크해주기 때문에, *별도의 publish/install 단계 없이* 바로 동작한다. `packages/ui`의 컴포넌트를 고치면 두 앱에 즉시 반영된다 (Next의 HMR, Vite의 HMR도 그대로 동작).
+
+여기서 두 가지가 중요하다.
+
+**React를 `peerDependencies`로 둔다.** `dependencies`로 두면 `packages/ui`가 React를 자기 의존성으로 끌어들이고, 두 앱이 각자 가진 React와 *충돌*해서 React 인스턴스가 두 벌 로드되는 문제가 생긴다 (React는 같은 인스턴스를 공유해야 hooks가 정상 동작한다). `peerDependencies`로 두면 "나는 React가 필요하지만, 그건 *나를 쓰는 쪽*이 가진 React를 그대로 쓰겠다"는 선언이 된다.
+
+**`packages/ui`는 표현 계층만.** 라우팅, 콘텐츠 로딩, 앱별 데이터 형식을 알면 안 된다. `Card` 컴포넌트가 *blog의 글 데이터 구조*를 인자로 받는 모양이 되면 그건 더 이상 공유 가능한 컴포넌트가 아니다 — 그저 blog 컴포넌트가 packages/ui 폴더에 있을 뿐. 이 경계를 흐리는 순간 *공유 패키지가 한 앱에 묶이는 코드*가 되고, 모노레포의 의미가 사라진다.
+
+### 어떻게: 비-React 자산 공유 (디자인 토큰)
+
+공유 자산이 컴포넌트만은 아니다. 두 앱이 같은 색·간격·폰트를 쓰려면 *디자인 토큰*도 공유해야 하고, 이건 React 컴포넌트가 아니라 CSS다. Tailwind v4에서 토큰은 글로벌 CSS의 `@theme` 블록에 둔다.
+
+```css
+/* packages/tailwind-config/theme.css */
+@theme {
+  --color-primary: oklch(0.65 0.2 240);
+  --color-on-primary: oklch(0.99 0 0);
+  --font-display-xl: 800 4rem/1.05 "Inter Variable", sans-serif;
+  /* ... */
+}
+```
+
+```json
+// packages/tailwind-config/package.json
+{
+  "name": "@atelier/tailwind-config",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./theme.css": "./theme.css"
+  }
+}
+```
+
+각 앱의 글로벌 CSS에서 가져다 쓴다.
+
+```css
+/* apps/blog/app/globals.css */
+@import "@atelier/tailwind-config/theme.css";
+@import "tailwindcss";
+```
+
+이러면 두 앱이 *같은 토큰*을 쓰고, 한 곳에서 색을 바꾸면 양쪽이 같이 바뀐다. 컴포넌트 공유와 같은 메커니즘 — 워크스페이스 의존성으로 선언하고 import — 이지만 *대상이 React 컴포넌트가 아니라 CSS 파일*이라는 차이가 있을 뿐이다.
+
+### atelier의 지금 상태
+
+지금 atelier의 `packages/*`는 비어 있다. 위에서 그린 `@atelier/ui`나 `@atelier/tailwind-config`는 *아직 만들어지지 않은 미래*다. 비어 있는 건 게으름이 아니라 — 위에서 짚은 원칙대로 — *두 번째 진짜 사용처가 아직 없기 때문에 의도적으로 미룬* 결정이다. `apps/blog` 안에서 두세 군데 쓰이는 컴포넌트가 있어도, 그게 *blog 안에서만의 공통점*인지 *atelier 전체의 공통점*인지는 두 번째 앱이 나타나기 전엔 알 수 없다.
+
+`pnpm-workspace.yaml`에 `packages/*`를 미리 선언해둔 건, *준비는 돼 있고 채우지만 않을 뿐*이라는 뜻이다. 두 번째 사용처가 나타나는 순간 폴더 하나 만들고 `package.json`을 두면 즉시 워크스페이스의 일원이 된다.
+
+모노레포에서 가장 큰 실수는 *공유 패키지를 너무 일찍 만드는 것*이다. 비워두는 결정은 게으른 게 아니라 추상화의 시점을 의도적으로 뒤로 미루는 선택이다.
+
+## 정리
+
+여기까지가 atelier의 모노레포 모양이다. 네 가지 결정 — workspace로 묶기, 의존성을 쓰는 패키지에 두기, 루트는 분배기로만, 공유는 두 번째 사용처가 나타날 때까지 미루기 — 의 공통점은 *지금 한 앱*이 아니라 *다음 앱이 들어올 때*를 기준으로 정해졌다는 것이다. 한 앱만 보면 과한 구조처럼 느껴지지만, 두 번째 앱이 들어오는 순간 같은 결정이 *미리 깔려 있어서 다행인 것들*로 바뀐다.
+
+다음 글에서는 이 모노레포를 컨테이너로 EC2에 올리는 얘기를 한다. 패키지 단위로 나눈 의존성과 빌드 명령이 컨테이너 이미지를 작게 유지하는 데 어떻게 직접 작용하는지 — 그 연결을 다음에 짚는다.

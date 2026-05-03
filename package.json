@@ -12,6 +12,8 @@
     "test": "pnpm -r test",
     "docker:blog:build": "docker build -f apps/blog/Dockerfile -t atelier-blog:test .",
     "docker:blog:up": "docker compose up --build blog",
-    "docker:blog:down": "docker compose down"
+    "docker:blog:down": "docker compose down",
+    "docker:proxy:up": "docker compose up --build nginx",
+    "docker:proxy:down": "docker compose down"
   }
 }

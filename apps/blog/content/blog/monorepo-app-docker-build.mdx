@@ -1,0 +1,288 @@
+---
+title: "pnpm 모노레포에서 특정 앱을 Docker 이미지로 빌드하기"
+date: "2026-05-03"
+category: "Deployment"
+excerpt: "모노레포 안의 특정 프론트엔드 앱만 골라 Docker 이미지로 빌드하려면 Docker build context, pnpm workspace, Docker 캐시, Next.js standalone 출력이 서로 어떻게 맞물리는지 이해해야 한다."
+tags: ["Monorepo", "Docker", "pnpm", "Next.js", "Deployment"]
+---
+
+모노레포에서 Dockerfile을 처음 쓰면 이상한 질문이 생긴다. 앱은 `apps/blog` 안에 있는데, 왜 Docker 빌드는 저장소 루트에서 해야 할까. Dockerfile도 앱 폴더 안에 있는데 왜 루트의 `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`을 먼저 복사할까. 그리고 왜 `packages/eslint-config/package.json`이나 `packages/tsconfig/package.json`까지 Dockerfile에 등장할까.
+
+이 글은 그 질문에서 출발한다. 여기서 `apps/blog`는 첫 번째 대상 앱일 뿐이다. 중요한 주제는 블로그 자체가 아니라, pnpm 모노레포 안의 특정 프론트엔드 앱을 Docker 이미지로 만드는 흐름이다.
+
+## 목표 구조
+
+현재 저장소는 대략 이런 모양이다.
+
+```text
+atelier/
+  apps/
+    blog/
+      Dockerfile
+      package.json
+      next.config.ts
+  packages/
+    ui/
+      package.json
+      src/
+        container.tsx
+    eslint-config/
+      package.json
+    tsconfig/
+      package.json
+  package.json
+  pnpm-lock.yaml
+  pnpm-workspace.yaml
+```
+
+Docker 이미지로 만들고 싶은 대상은 `apps/blog`다. 하지만 이 앱은 혼자 떨어진 npm 프로젝트가 아니다. 루트 lockfile을 공유하고, `pnpm-workspace.yaml`의 규칙 안에 있고, `packages/*` 아래의 공유 패키지를 사용할 수 있다.
+
+예를 들어 지금 블로그 앱은 공통 레이아웃 primitive인 `Container`를 `@atelier/ui`에서 가져다 쓴다.
+
+```tsx
+import { Container } from "@atelier/ui";
+```
+
+`@atelier/ui`는 외부 npm 패키지가 아니라 같은 저장소 안의 `packages/ui`다.
+
+그래서 Docker 빌드는 앱 폴더가 아니라 저장소 루트를 context로 삼는다.
+
+```bash
+docker build -f apps/blog/Dockerfile -t atelier-blog:test .
+```
+
+여기서 마지막 `.`이 중요하다. 이 점은 현재 디렉터리, 즉 저장소 루트를 Docker build context로 넘긴다는 뜻이다. Dockerfile은 `apps/blog/Dockerfile`을 쓰지만, Docker가 복사할 수 있는 파일 범위는 루트 전체가 된다.
+
+## Dockerfile은 앱만 보는 게 아니다
+
+현재 Dockerfile의 의존성 설치 단계는 이렇게 생겼다.
+
+```dockerfile
+FROM base AS deps
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/blog/package.json apps/blog/package.json
+COPY packages/eslint-config/package.json packages/eslint-config/package.json
+COPY packages/tsconfig/package.json packages/tsconfig/package.json
+COPY packages/ui/package.json packages/ui/package.json
+RUN pnpm install --frozen-lockfile
+```
+
+처음 보면 `packages/eslint-config`와 `packages/tsconfig`를 Docker가 어떻게 알고 있는지 헷갈릴 수 있다. Docker가 스스로 아는 것은 없다. 우리가 `COPY`로 알려준 것이다.
+
+pnpm은 설치할 때 루트의 `pnpm-workspace.yaml`을 본다.
+
+```yaml
+packages:
+  - apps/*
+  - packages/*
+```
+
+이 설정은 `apps/*`와 `packages/*` 아래의 `package.json`을 워크스페이스 패키지 후보로 본다는 뜻이다. Dockerfile에서 각 패키지의 `package.json`을 먼저 복사해두면, 컨테이너 안에서도 pnpm이 같은 모노레포 구조를 인식할 수 있다.
+
+컨테이너 안의 `deps` 단계에서 pnpm이 보는 구조는 대략 이렇다.
+
+```text
+/repo
+  package.json
+  pnpm-lock.yaml
+  pnpm-workspace.yaml
+  apps/blog/package.json
+  packages/eslint-config/package.json
+  packages/tsconfig/package.json
+  packages/ui/package.json
+```
+
+그러면 pnpm은 `@atelier/blog`, `@atelier/eslint-config`, `@atelier/tsconfig`, `@atelier/ui` 같은 워크스페이스 패키지 관계를 lockfile 기준으로 설치할 수 있다.
+
+나중에 다른 공유 패키지가 생기고 `apps/blog`가 그 패키지를 쓰게 된다면 Dockerfile에도 같은 종류의 줄이 추가되어야 한다.
+
+```dockerfile
+COPY packages/some-package/package.json packages/some-package/package.json
+```
+
+이 줄은 UI 소스 코드를 복사하려는 목적이 아니다. 의존성 설치 단계에서 pnpm이 워크스페이스 패키지의 존재와 이름을 알 수 있게 하려는 것이다.
+
+## 왜 전체 소스를 바로 복사하지 않을까
+
+가장 단순한 Dockerfile은 이렇게 쓸 수도 있다.
+
+```dockerfile
+COPY . .
+RUN pnpm install --frozen-lockfile
+RUN pnpm -F @atelier/blog build
+```
+
+하지만 이렇게 하면 작은 코드 하나만 바뀌어도 `pnpm install` 캐시가 깨지기 쉽다. Docker는 각 명령을 layer로 쌓고, 앞 layer의 입력이 바뀌면 그 뒤 layer를 다시 실행한다.
+
+의존성 설치에 필요한 파일은 보통 다음 정도다.
+
+```text
+package.json
+pnpm-lock.yaml
+pnpm-workspace.yaml
+각 워크스페이스 package.json
+```
+
+반대로 페이지 컴포넌트나 CSS 파일이 바뀌어도 의존성 설치 결과는 바뀌지 않는다. 그래서 Dockerfile은 먼저 package.json 계열만 복사하고 `pnpm install`을 실행한다.
+
+```dockerfile
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/blog/package.json apps/blog/package.json
+COPY packages/eslint-config/package.json packages/eslint-config/package.json
+COPY packages/tsconfig/package.json packages/tsconfig/package.json
+COPY packages/ui/package.json packages/ui/package.json
+RUN pnpm install --frozen-lockfile
+```
+
+그 다음 빌드 단계에서 전체 소스를 복사한다.
+
+```dockerfile
+COPY . .
+RUN pnpm -F @atelier/blog build
+```
+
+이 구조 덕분에 소스 코드만 바뀐 경우에는 의존성 설치 layer를 재사용할 가능성이 높아진다. 빌드 시간이 줄어드는 이유가 여기에 있다.
+
+## `pnpm -F @atelier/blog build`의 의미
+
+모노레포에서는 루트에 여러 앱과 패키지가 있을 수 있다. 하지만 이번 이미지에 필요한 것은 특정 앱 하나다.
+
+```dockerfile
+RUN pnpm -F @atelier/blog build
+```
+
+`-F`는 filter다. 워크스페이스 전체 중 `@atelier/blog` 패키지만 골라 그 패키지의 `build` 스크립트를 실행한다.
+
+`apps/blog/package.json`에는 이런 스크립트가 있다.
+
+```json
+{
+  "scripts": {
+    "build": "next build"
+  }
+}
+```
+
+결국 Docker 빌드 안에서는 `apps/blog`의 `next build`가 실행된다. 루트는 조율자고, 실제 빌드는 대상 앱의 package.json이 맡는다.
+
+이때 앱이 `@atelier/ui`를 import하고 있다면 Next.js 빌드는 앱 코드뿐 아니라 워크스페이스의 UI 패키지도 함께 처리해야 한다. 그래서 블로그 앱의 `next.config.ts`에는 다음 설정이 들어간다.
+
+```ts
+const nextConfig = {
+  output: "standalone",
+  transpilePackages: ["@atelier/ui"],
+};
+```
+
+`@atelier/ui`는 빌드된 JavaScript만 제공하는 외부 패키지가 아니라 저장소 안의 TypeScript/TSX 소스 패키지다. `transpilePackages`는 이 패키지를 Next.js 빌드 파이프라인에서 함께 변환하라고 알려주는 설정이다.
+
+## Next.js standalone 출력
+
+Docker 실행 이미지는 작고 단순할수록 좋다. 개발용 의존성, 전체 소스, 빌드 도구를 모두 들고 있을 필요가 없다.
+
+Next.js에서는 `next.config.ts`에 다음 설정을 넣을 수 있다.
+
+```ts
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  output: "standalone",
+};
+
+export default nextConfig;
+```
+
+이 설정을 켜면 `next build`가 프로덕션 실행에 필요한 파일을 추적해서 `.next/standalone`에 모아준다. 그래서 최종 실행 단계에서는 다음 세 묶음만 복사한다.
+
+```dockerfile
+COPY --from=builder /repo/apps/blog/public ./apps/blog/public
+COPY --from=builder /repo/apps/blog/.next/static ./apps/blog/.next/static
+COPY --from=builder /repo/apps/blog/.next/standalone ./
+```
+
+`public`과 `.next/static`은 정적 파일이다. `.next/standalone`은 Next.js 서버를 실행하는 데 필요한 최소 묶음이다.
+
+최종 실행 명령은 `next start`가 아니라 standalone 결과물의 서버 파일을 실행한다.
+
+```dockerfile
+CMD ["node", "apps/blog/server.js"]
+```
+
+## 멀티 스테이지 빌드가 나누는 책임
+
+Dockerfile은 크게 네 단계로 나뉜다.
+
+```text
+base
+  Node와 pnpm 준비
+
+deps
+  의존성 설치
+
+builder
+  대상 앱 빌드
+
+runner
+  실행에 필요한 파일만 담기
+```
+
+`deps`와 `builder`에는 빌드에 필요한 도구와 소스가 들어간다. 하지만 `runner`에는 실행에 필요한 결과물만 들어간다.
+
+이 분리가 중요한 이유는 단순하다. 이미지를 만들 때 필요한 것과 이미지를 실행할 때 필요한 것은 다르다. 빌드 도구는 build 단계에만 있으면 되고, 운영 컨테이너에는 앱 실행 파일만 있으면 된다.
+
+## 실행은 Dockerfile 밖에서 정한다
+
+Dockerfile은 이미지를 만드는 방법을 정한다. 하지만 컨테이너 이름, 포트 매핑, 여러 컨테이너의 관계는 실행 시점의 문제다.
+
+그래서 이 저장소는 Compose도 함께 둔다.
+
+```yaml
+services:
+  blog:
+    container_name: atelier-blog
+    image: atelier-blog:test
+    build:
+      context: .
+      dockerfile: apps/blog/Dockerfile
+    ports:
+      - "3000:3000"
+```
+
+Dockerfile이 `atelier-blog:test` 이미지를 만들고, Compose가 그 이미지를 `atelier-blog` 컨테이너로 실행한다. `ports`는 내 컴퓨터의 3000번 포트와 컨테이너 안의 3000번 포트를 연결한다.
+
+역할을 나누면 이렇게 된다.
+
+```text
+Dockerfile
+  이미지를 어떻게 만들지
+
+docker-compose.yml
+  컨테이너를 어떤 이름과 포트로 실행할지
+```
+
+이 둘을 섞어서 생각하면 Docker Desktop에서 이미지 클릭 실행은 되는데 `localhost` 접속은 안 되는 상황이 쉽게 생긴다. 이미지를 만드는 것과 컨테이너를 외부에 연결하는 것은 다른 문제다.
+
+## 정리
+
+모노레포에서 특정 앱을 Docker 이미지로 빌드하려면 앱 폴더만 보면 부족하다. 대상 앱은 루트 lockfile, workspace 설정, 공유 패키지와 연결되어 있다.
+
+그래서 이 구조가 필요하다.
+
+```text
+루트 build context
+  -> pnpm workspace 정보 포함
+
+package.json 선복사
+  -> Docker install 캐시 활용
+
+workspace 공유 패키지
+  -> @atelier/ui 같은 앱 밖의 코드도 함께 인식
+
+pnpm -F @atelier/blog build
+  -> 특정 앱만 선택 빌드
+
+Next.js standalone
+  -> 실행 이미지에 필요한 파일 최소화
+```
+
+이미지를 만들 수 있게 되었지만, 아직 컨테이너 이름과 포트 연결은 실행 설정에 달려 있다. 다음 단계에서는 Docker Compose로 실행 환경을 파일에 고정하고, 왜 GUI 클릭 실행보다 재현성이 좋은지 정리한다.
