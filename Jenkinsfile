@@ -47,6 +47,7 @@ pipeline {
 
   environment {
     CI = 'true'
+    COMPOSE_PROJECT_NAME = 'atelier'
     NEXT_TELEMETRY_DISABLED = '1'
   }
 
