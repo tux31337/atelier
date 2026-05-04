@@ -61,14 +61,43 @@
 - Nginx는 Compose 네트워크 안에서 `blog:3000`으로 블로그 컨테이너를 찾는다.
 - `proxy_pass`는 요청을 뒤쪽 앱 서버로 넘긴다.
 
-## 5단계: 다음 예정
+## 5단계: blue-green 배포
+
+Nginx 앞단 구조를 이용해 blue, green 슬롯을 나누고 active upstream을 전환한다.
+
+1. `blue-green-deploy-note.md`
+2. `container-name-and-network-flow.md`
+
+이 단계에서 볼 개념:
+
+- `blog-blue`, `blog-green`은 같은 앱을 띄우는 두 실행 자리다.
+- Nginx는 `blog-active.conf`를 통해 현재 활성 슬롯을 바라본다.
+- 새 슬롯을 먼저 띄우고 health check가 성공한 뒤 active include 파일을 전환한다.
+- 실패 중간 상태에서는 active 파일이 살아 있는 슬롯을 보는지 확인한다.
+
+## 6단계: Jenkins CI/CD
+
+로컬 Jenkins가 GitHub 코드를 읽고, 검증과 이미지 빌드, registry push, blue-green 배포 스크립트 실행까지 맡는다.
+
+1. `jenkins-ci-cd-note.md`
+2. `blue-green-deploy-note.md`
+3. `container-name-and-network-flow.md`
+
+이 단계에서 볼 개념:
+
+- Jenkins도 컨테이너로 실행할 수 있다.
+- Jenkins 컨테이너 안에서 Docker를 쓰려면 Docker CLI와 Docker socket 연결이 필요하다.
+- Compose 프로젝트명을 고정하지 않으면 작업 폴더명 때문에 컨테이너 이름이 충돌할 수 있다.
+- Jenkins 컨테이너 안의 `localhost`는 내 PC가 아니라 Jenkins 컨테이너 자기 자신이다.
+
+## 7단계: 다음 예정
 
 다음에 노트가 추가되면 이 순서로 이어가면 좋다.
 
-1. Docker Compose로 blue, green 슬롯 나누기
-2. Nginx upstream 전환 방식
-3. 배포 스크립트와 health check
-4. GitHub Actions 또는 다른 CI/CD에서 이미지 빌드와 배포 자동화
+1. GitHub webhook으로 push 시 자동 빌드
+2. Jenkins credential로 registry 주소와 secret 관리
+3. 실제 배포 서버 SSH 실행
+4. Docker build cache와 이미지 정리 정책
 
 ## 복습할 때 추천 질문
 

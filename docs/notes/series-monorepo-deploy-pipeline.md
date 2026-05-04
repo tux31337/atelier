@@ -80,6 +80,10 @@
 - 이미지 태그 전략
 - 서버 배포 스크립트 실행
 - secret 관리
+- Jenkins 컨테이너 실행 환경
+- Docker socket 연결
+- Compose 프로젝트명 고정
+- Jenkins 컨테이너 안의 localhost 문제
 
 ### 6편: 운영에 가까운 보완
 
@@ -91,6 +95,16 @@
 - 보안 헤더
 - 이미지 정리
 - 환경 변수 관리
+
+## 현재 발행 글
+
+```text
+1편: pnpm 모노레포에서 특정 앱을 Docker 이미지로 빌드하기
+2편: Docker Compose로 앱 실행 환경을 파일에 고정하기
+3편: Nginx reverse proxy로 프론트엔드 앱의 진입점 분리하기
+4편: Nginx include 파일로 blue-green 배포 흐름 만들기
+5편: Jenkins로 로컬 CI/CD 파이프라인 끝까지 연결하기
+```
 
 ## 글 사이 연결 문장 방향
 

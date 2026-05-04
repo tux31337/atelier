@@ -1,0 +1,328 @@
+---
+title: "Jenkins로 로컬 CI/CD 파이프라인 끝까지 연결하기"
+date: "2026-05-03"
+category: "Deployment"
+excerpt: "Jenkins가 GitHub 코드를 가져와 검증하고 Docker 이미지를 만들고 로컬 registry에 push한 뒤, blue-green 배포 스크립트까지 실행하는 흐름을 구성한다."
+tags: ["Jenkins", "CI/CD", "Docker", "Blue Green", "Deployment"]
+---
+
+이번 시리즈는 pnpm 모노레포 안의 프론트엔드 앱을 Docker 이미지로 만들고, Docker Compose로 실행 환경을 고정한 뒤, Nginx를 이용해 blue-green 배포 구조로 확장하고, 마지막에는 Jenkins로 CI/CD 파이프라인까지 연결하는 과정을 기록한다.
+
+완성된 구조를 먼저 그리면 이렇다.
+
+```text
+pnpm 모노레포
+  -> 특정 앱 Docker 이미지 빌드
+  -> Docker Compose 실행
+  -> Nginx reverse proxy
+  -> blue-green 슬롯 전환
+  -> Jenkins CI/CD 자동화
+```
+
+## 시리즈 목차
+
+1. [pnpm 모노레포에서 특정 앱을 Docker 이미지로 빌드하기](/blog/monorepo-app-docker-build)
+2. [Docker Compose로 앱 실행 환경을 파일에 고정하기](/blog/docker-compose-execution-contract)
+3. [Nginx reverse proxy로 프론트엔드 앱의 진입점 분리하기](/blog/nginx-reverse-proxy-entrypoint)
+4. [Nginx include 파일로 blue-green 배포 흐름 만들기](/blog/blue-green-deploy-with-nginx-include)
+5. [Jenkins로 로컬 CI/CD 파이프라인 끝까지 연결하기](/blog/jenkins-local-ci-cd-pipeline) - 현재 글
+
+이번 글은 **5편**이다. 앞에서 만든 Docker 이미지 빌드, registry push, blue-green 배포 스크립트를 Jenkins 파이프라인으로 연결해 로컬 CI/CD 흐름을 끝까지 검증한다.
+
+Dockerfile, Compose, Nginx, blue-green 배포 스크립트가 준비되면 마지막 질문이 남는다.
+
+```text
+이걸 매번 사람이 명령어로 실행해야 할까?
+```
+
+CI/CD의 출발점은 이 반복을 Jenkins 같은 도구에 맡기는 것이다. 이번 글에서는 로컬 Jenkins가 GitHub 코드를 가져와 검증하고, Docker 이미지를 만들고, 로컬 registry에 push하고, 선택적으로 blue-green 배포까지 실행하는 흐름을 정리한다.
+
+## Jenkins가 맡는 일
+
+이번 파이프라인의 목표는 명확하다.
+
+```text
+GitHub main
+  -> Jenkins checkout
+  -> pnpm install
+  -> lint / typecheck / test / build
+  -> Docker image build
+  -> localhost:5000 registry push
+  -> deploy script 실행
+```
+
+여기서 앞쪽은 CI에 가깝고, 뒤쪽은 CD에 가깝다.
+
+```text
+CI
+  코드가 빌드 가능한지 검증한다.
+  테스트를 실행한다.
+  배포 가능한 Docker 이미지를 만든다.
+
+CD
+  만든 이미지를 서버가 받을 수 있게 push한다.
+  배포 스크립트를 실행한다.
+  트래픽을 새 컨테이너로 전환한다.
+```
+
+이번 실습에서는 실제 외부 서버 대신 로컬 Docker 환경을 서버처럼 사용했다.
+
+## Jenkins도 컨테이너로 띄운다
+
+처음에는 공식 Jenkins 이미지를 그대로 띄울 수 있다.
+
+```powershell
+docker run -d --name atelier-jenkins -p 9090:8080 -p 50000:50000 -v jenkins_home:/var/jenkins_home jenkins/jenkins:lts
+```
+
+이 명령으로 Jenkins 화면은 뜬다. 하지만 이 기본 이미지만으로는 우리 프로젝트를 빌드하기에 부족할 수 있다. Jenkins 안에서 Docker 빌드, Docker Compose, Node.js, pnpm을 실행해야 하기 때문이다.
+
+그래서 저장소에 Jenkins용 이미지를 따로 둔다.
+
+```text
+infra/jenkins/Dockerfile
+```
+
+이 이미지는 Jenkins에 다음 도구를 추가한다.
+
+```text
+Docker CLI
+Docker Compose plugin
+Node.js
+pnpm
+Git
+```
+
+그리고 Jenkins 컨테이너가 호스트 Docker를 조작할 수 있도록 Docker socket을 연결한다.
+
+```yaml
+volumes:
+  - jenkins_home:/var/jenkins_home
+  - /var/run/docker.sock:/var/run/docker.sock
+```
+
+이 구조 덕분에 Jenkins 컨테이너 안에서 실행한 `docker build`가 실제 내 PC의 Docker Engine에서 실행된다.
+
+## Jenkins 설정은 volume에 남긴다
+
+Jenkins 초기 설정, 플러그인, Job 정보는 컨테이너 안의 `/var/jenkins_home`에 저장된다. 컨테이너를 지우면 이 폴더도 같이 사라질 수 있다.
+
+그래서 Docker volume을 사용한다.
+
+```yaml
+volumes:
+  jenkins_home:
+    external: true
+    name: jenkins_home
+```
+
+처음 수동으로 Jenkins를 띄울 때 만든 `jenkins_home` 볼륨을 Compose에서도 그대로 사용한다. 그러면 Jenkins 컨테이너를 커스텀 이미지로 교체해도 초기 설정이 사라지지 않는다.
+
+## Pipeline Job 만들기
+
+Jenkins 화면에서 새 Pipeline Job을 만든다.
+
+```text
+New Item
+  -> Pipeline
+  -> 이름: atelier-blog
+```
+
+General에서는 동시에 여러 배포가 겹치지 않게 concurrent build를 막는다. 배포 파이프라인이 동시에 두 번 돌면 blue-green 전환이 꼬일 수 있기 때문이다.
+
+Triggers는 처음에는 모두 비워둔다. 자동 실행보다 수동 실행으로 흐름을 이해하는 것이 먼저다.
+
+Pipeline 설정은 Git에서 `Jenkinsfile`을 읽도록 둔다.
+
+```text
+Definition: Pipeline script from SCM
+SCM: Git
+Repository URL: https://github.com/tux31337/atelier.git
+Branch: */main
+Script Path: Jenkinsfile
+```
+
+이제 Jenkins는 GitHub의 `main` 브랜치에서 `Jenkinsfile`을 가져와 실행한다.
+
+## Jenkinsfile의 흐름
+
+파이프라인은 단계별로 나뉜다.
+
+```text
+Checkout
+Prepare
+Install
+Workspace Checks
+Start Local Registry
+Build Blog Image
+Push Blog Image
+Deploy Local
+```
+
+`Prepare` 단계에서는 커밋 해시를 이미지 태그로 만든다.
+
+```text
+localhost:5000/atelier-blog:30f45bbb59f1
+```
+
+이미지 태그에 커밋 해시를 붙이면 어떤 코드로 만든 이미지인지 추적할 수 있다.
+
+`Workspace Checks`는 루트 검증 명령을 실행한다.
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+```
+
+이 단계가 통과해야 Docker 이미지를 만든다. 실패한 코드를 이미지로 만들지 않기 위해서다.
+
+## registry push 확인
+
+Jenkins가 이미지를 만들고 push하면 콘솔 마지막에 이런 줄이 나온다.
+
+```text
+Blog image: localhost:5000/atelier-blog:30f45bbb59f1
+```
+
+이 이미지를 내 PC에서 pull할 수 있으면 registry push가 성공한 것이다.
+
+```powershell
+docker pull localhost:5000/atelier-blog:30f45bbb59f1
+```
+
+성공하면 이런 의미다.
+
+```text
+Jenkins가 이미지를 만들었다.
+로컬 registry에 push했다.
+다른 실행 환경이 같은 태그를 pull할 수 있다.
+```
+
+여기까지가 CI 결과물 확인이다. 배포 가능한 산출물이 만들어졌다.
+
+## Compose 프로젝트명 충돌
+
+처음 Jenkins에서 registry를 띄울 때 실패했다.
+
+```text
+Conflict. The container name "/atelier-registry" is already in use
+```
+
+원인은 Compose 프로젝트명이었다. 로컬에서 실행할 때는 저장소 폴더명이 `atelier`라서 Compose 프로젝트명이 `atelier`였다. Jenkins 작업 폴더는 `atelier-blog`라서 Compose 프로젝트명이 `atelier-blog`로 잡혔다.
+
+그 결과 Jenkins는 다른 프로젝트라고 생각하면서도 같은 `container_name: atelier-registry`를 만들려고 했다.
+
+해결은 Jenkinsfile에서 Compose 프로젝트명을 고정하는 것이다.
+
+```groovy
+environment {
+  COMPOSE_PROJECT_NAME = 'atelier'
+}
+```
+
+이제 Jenkins가 어느 작업 폴더에서 실행되든 같은 Compose 묶음을 바라본다.
+
+## Jenkins 컨테이너 안의 localhost
+
+CD 단계에서도 한 번 실패했다.
+
+```text
+Waiting for health check: http://127.0.0.1:3001/api/health
+Health check failed
+```
+
+Jenkins가 컨테이너 안에서 실행되고 있었기 때문에 `127.0.0.1`은 내 PC가 아니라 Jenkins 컨테이너였다.
+
+그래서 Linux용 배포 스크립트는 health check를 Compose 서비스 이름으로 한다.
+
+```bash
+http://blog-green:3000/api/health
+```
+
+이 수정 후 배포 로그는 정상 흐름을 보였다.
+
+```text
+Starting target container: atelier-blog-green
+Waiting for health check: http://blog-green:3000/api/health
+Switching active upstream to green
+Validating nginx configuration
+Reloading nginx
+Stopping previous container: atelier-blog-blue
+Blog deployment switched to green.
+Finished: SUCCESS
+```
+
+## 파라미터로 CI와 CD 나누기
+
+처음부터 배포까지 켜면 실패했을 때 원인 범위가 넓다. 그래서 파라미터를 둔다.
+
+```text
+REGISTRY = localhost:5000
+START_LOCAL_REGISTRY = true
+DEPLOY_LOCAL = false
+```
+
+`DEPLOY_LOCAL=false`로 먼저 돌리면 이미지 빌드와 registry push까지만 검증한다.
+
+그 다음 `DEPLOY_LOCAL=true`로 돌리면 blue-green 배포까지 실행한다.
+
+```text
+1차 실행
+  CI와 image push 확인
+
+2차 실행
+  CD까지 확인
+```
+
+이렇게 나누면 실패 지점을 작게 볼 수 있다.
+
+## 현재 실습이 완성한 것
+
+이번 단계에서 완성한 흐름은 다음이다.
+
+```text
+GitHub main
+  -> Jenkins
+  -> pnpm install
+  -> lint/typecheck/test/build
+  -> Docker image build
+  -> localhost:5000 registry push
+  -> 반대 슬롯 컨테이너 실행
+  -> health check
+  -> Nginx active include 전환
+  -> Nginx reload
+  -> 이전 슬롯 중지
+```
+
+로컬 환경이지만 회사식 배포 흐름의 뼈대가 들어 있다.
+
+```text
+소스 저장소
+CI 서버
+이미지 registry
+배포 대상 서버
+reverse proxy
+blue-green 슬롯
+health check
+```
+
+각 요소를 모두 로컬 Docker 위에 축소해서 올린 셈이다.
+
+## 다음에 보완할 것
+
+지금 구조는 학습용으로 충분하지만 실제 운영에 가깝게 가려면 보완할 것이 있다.
+
+```text
+GitHub webhook으로 push 시 자동 빌드
+registry 주소와 인증 정보를 Jenkins credential로 관리
+실제 배포 서버에 SSH로 접속해 deploy 실행
+앱별 파이프라인 분리
+Docker build cache 적용
+실패 시 rollback 자동화
+이미지 정리 정책
+HTTPS와 보안 헤더
+```
+
+하지만 지금 단계에서 중요한 것은 전체 흐름을 한 번 끝까지 연결했다는 점이다. CI/CD는 도구 이름을 외우는 것이 아니라, 코드가 배포 가능한 컨테이너가 되고 그 컨테이너로 트래픽이 이동하는 경로를 이해하는 일이다.

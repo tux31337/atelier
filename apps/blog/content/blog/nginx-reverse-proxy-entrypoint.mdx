@@ -1,0 +1,227 @@
+---
+title: "Nginx reverse proxy로 프론트엔드 앱의 진입점 분리하기"
+date: "2026-05-03"
+category: "Deployment"
+excerpt: "앱 컨테이너 앞에 Nginx를 두면 외부 공개 포트와 내부 앱 포트를 분리하고, 나중에 blue-green 슬롯 전환을 위한 트래픽 스위치를 만들 수 있다."
+tags: ["Nginx", "Docker", "Reverse Proxy", "Deployment"]
+---
+
+이번 시리즈는 pnpm 모노레포 안의 프론트엔드 앱을 Docker 이미지로 만들고, Docker Compose로 실행 환경을 고정한 뒤, Nginx를 이용해 blue-green 배포 구조로 확장하고, 마지막에는 Jenkins로 CI/CD 파이프라인까지 연결하는 과정을 기록한다.
+
+완성된 구조를 먼저 그리면 이렇다.
+
+```text
+pnpm 모노레포
+  -> 특정 앱 Docker 이미지 빌드
+  -> Docker Compose 실행
+  -> Nginx reverse proxy
+  -> blue-green 슬롯 전환
+  -> Jenkins CI/CD 자동화
+```
+
+## 시리즈 목차
+
+1. [pnpm 모노레포에서 특정 앱을 Docker 이미지로 빌드하기](/blog/monorepo-app-docker-build)
+2. [Docker Compose로 앱 실행 환경을 파일에 고정하기](/blog/docker-compose-execution-contract)
+3. [Nginx reverse proxy로 프론트엔드 앱의 진입점 분리하기](/blog/nginx-reverse-proxy-entrypoint) - 현재 글
+4. [Nginx include 파일로 blue-green 배포 흐름 만들기](/blog/blue-green-deploy-with-nginx-include)
+5. [Jenkins로 로컬 CI/CD 파이프라인 끝까지 연결하기](/blog/jenkins-local-ci-cd-pipeline)
+
+이번 글은 **3편**이다. 앱 컨테이너 앞에 Nginx를 세워 외부 진입점을 분리하고, 나중에 blue-green 전환을 할 수 있는 트래픽 스위치의 기반을 만든다.
+
+Docker Compose로 앱 컨테이너를 띄우면 브라우저에서 바로 앱에 접근할 수 있다.
+
+```text
+http://localhost:3001 -> blog-blue 컨테이너:3000
+```
+
+학습 단계에서는 이 직접 접근이 편하다. 하지만 배포 구조를 연습하려면 앱 컨테이너 앞에 별도의 진입점을 두는 편이 좋다. 이 역할을 Nginx가 맡는다.
+
+## reverse proxy가 하는 일
+
+proxy는 요청을 대신 전달하는 중간자다. reverse proxy는 사용자의 요청을 먼저 받고, 뒤쪽의 앱 서버로 넘긴다.
+
+이 저장소의 흐름은 이렇게 생겼다.
+
+```text
+브라우저
+  -> http://localhost:8080
+  -> atelier-nginx 컨테이너:80
+  -> blog-blue 또는 blog-green 컨테이너:3000
+  -> Next.js 앱
+```
+
+브라우저는 앱 컨테이너를 직접 알 필요가 없다. 사용자는 Nginx만 바라본다. Nginx가 뒤쪽 앱 컨테이너를 선택한다.
+
+## 왜 앱 앞에 Nginx를 두는가
+
+Nginx를 앞에 두는 이유는 단순한 포트 전달 이상이다.
+
+```text
+외부 공개 포트와 앱 내부 포트를 분리한다.
+여러 앱을 도메인이나 경로별로 나눌 수 있다.
+현재 활성 앱 컨테이너를 바꿀 수 있다.
+Nginx reload로 설정 변경을 반영할 수 있다.
+```
+
+특히 blue-green 배포에서는 마지막 두 가지가 중요하다. 새 버전 컨테이너를 먼저 띄운 뒤, Nginx가 바라보는 upstream만 바꾸면 사용자의 요청이 새 버전으로 이동한다.
+
+## Compose 안의 Nginx
+
+Compose에는 Nginx 서비스가 있다.
+
+```yaml
+services:
+  nginx:
+    container_name: atelier-nginx
+    image: nginx:1.27-alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./infra/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./infra/nginx/includes:/etc/nginx/includes:ro
+```
+
+`ports`는 내 PC의 8080번 포트를 Nginx 컨테이너의 80번 포트로 연결한다.
+
+```text
+localhost:8080 -> atelier-nginx:80
+```
+
+`volumes`는 저장소의 Nginx 설정 파일을 컨테이너 안에 읽기 전용으로 연결한다. 그래서 설정 파일을 Git으로 관리하면서 컨테이너는 그 파일을 읽게 만들 수 있다.
+
+## upstream과 proxy_pass
+
+Nginx 설정은 두 부분으로 보면 쉽다.
+
+```nginx
+upstream atelier_blog {
+  server blog-blue:3000;
+}
+```
+
+`upstream`은 뒤쪽 서버 그룹에 이름을 붙이는 설정이다. 여기서는 `atelier_blog`라는 이름으로 `blog-blue:3000`을 가리킨다.
+
+```nginx
+location / {
+  proxy_pass http://atelier_blog;
+}
+```
+
+`proxy_pass`는 들어온 요청을 `atelier_blog` upstream으로 넘긴다.
+
+합치면 이런 뜻이다.
+
+```text
+Nginx로 들어온 모든 요청
+  -> atelier_blog upstream
+  -> blog-blue:3000
+```
+
+여기서 `blog-blue`는 컨테이너 이름이 아니라 Compose 서비스 이름이다. Compose 네트워크 안에서는 서비스 이름이 DNS 이름처럼 동작한다.
+
+## 내 PC의 localhost와 컨테이너 안의 이름
+
+처음에는 이 차이가 헷갈린다.
+
+내 PC에서 앱을 직접 확인할 때는 이렇게 한다.
+
+```bash
+curl http://localhost:3001/api/health
+```
+
+하지만 Nginx 컨테이너 안에서는 `localhost:3001`이 아니다. Nginx 입장에서 `localhost`는 Nginx 컨테이너 자기 자신이다. Nginx는 같은 Compose 네트워크 안의 서비스 이름으로 앱을 찾아야 한다.
+
+```text
+Nginx 컨테이너 안:
+blog-blue:3000
+
+내 PC:
+localhost:3001
+```
+
+이 차이를 이해하면 Docker 네트워크의 절반은 잡힌다. `localhost`는 항상 “지금 그 명령이 실행되는 곳”을 뜻한다.
+
+## include 파일로 active upstream 분리하기
+
+blue-green 배포를 준비하려면 Nginx 설정을 한 덩어리로 직접 수정하지 않는 편이 좋다. 이 저장소는 활성 upstream을 별도 include 파일로 뺐다.
+
+```nginx
+include /etc/nginx/includes/blog-active.conf;
+```
+
+`blog-active.conf`의 내용은 현재 활성 슬롯을 가리킨다.
+
+```nginx
+upstream atelier_blog {
+  server blog-blue:3000;
+}
+```
+
+blue로 보내고 싶으면 `blog-blue.conf`를 active 파일로 복사한다. green으로 보내고 싶으면 `blog-green.conf`를 active 파일로 복사한다.
+
+```text
+blog-blue.conf
+  -> blog-blue:3000
+
+blog-green.conf
+  -> blog-green:3000
+
+blog-active.conf
+  -> 현재 Nginx가 실제로 include하는 파일
+```
+
+이 구조의 장점은 Nginx의 큰 설정 파일을 매번 직접 고치지 않아도 된다는 것이다. 작은 include 파일만 바꾸고 `nginx -s reload`를 실행하면 된다.
+
+## 502가 말해주는 것
+
+실습 중 `localhost:8080/api/health`에서 502가 나온 적이 있다.
+
+```html
+502 Bad Gateway
+```
+
+이 에러는 Nginx가 죽었다는 뜻이 아니다. 오히려 Nginx는 살아 있고 요청도 받았다. 문제는 Nginx가 뒤쪽 앱 컨테이너에 연결하지 못했다는 뜻이다.
+
+당시 active 파일은 `blog-green`을 보고 있었지만 실제로 떠 있는 앱 컨테이너는 `blog-blue`뿐이었다.
+
+```text
+Nginx -> blog-green:3000 -> 없음 -> 502
+```
+
+복구는 active 파일을 살아 있는 슬롯으로 바꾸고 Nginx를 reload하는 방식이었다.
+
+```powershell
+Copy-Item infra/nginx/includes/blog-blue.conf infra/nginx/includes/blog-active.conf -Force
+docker exec atelier-nginx nginx -s reload
+```
+
+502는 그래서 좋은 학습 신호다. “Nginx는 살아 있는데 upstream 대상이 죽었거나 잘못됐다”는 방향으로 보면 된다.
+
+## 정리
+
+Nginx를 앞에 두면 사용자는 앱 컨테이너를 직접 보지 않는다.
+
+```text
+사용자
+  -> Nginx
+  -> 현재 활성 앱 슬롯
+```
+
+이번 단계에서 중요한 개념은 다음이다.
+
+```text
+proxy_pass
+  요청을 뒤쪽 앱 서버로 넘긴다.
+
+Compose 서비스 이름
+  컨테이너 네트워크 안에서 DNS 이름처럼 동작한다.
+
+include 파일
+  active upstream만 작은 파일로 분리한다.
+
+502
+  Nginx가 upstream에 연결하지 못했다는 신호다.
+```
+
+Nginx가 앞단에 생기면 트래픽을 어느 앱 컨테이너로 보낼지 바꿀 수 있다. 다음 글에서는 이 성질을 이용해 blue-green 배포 구조로 확장한다.
