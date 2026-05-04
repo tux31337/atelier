@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
 
 FROM node:24-alpine AS base
+ENV NEXT_TELEMETRY_DISABLED=1
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
@@ -23,6 +24,7 @@ RUN pnpm -F @atelier/blog build
 FROM node:24-alpine AS runner
 WORKDIR /app
 
+ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
