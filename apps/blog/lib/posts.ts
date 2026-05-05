@@ -35,6 +35,7 @@ export function getAllPosts(): PostMeta[] {
       const raw = fs.readFileSync(path.join(CONTENT_DIR, file), "utf-8");
       return parsePost(slug, raw);
     })
+    .filter((post) => !post.draft)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
@@ -45,5 +46,10 @@ export function getPost(slug: string): Post {
 }
 
 export function postExists(slug: string): boolean {
-  return fs.existsSync(path.join(CONTENT_DIR, `${slug}.mdx`));
+  const file = path.join(CONTENT_DIR, `${slug}.mdx`);
+
+  if (!fs.existsSync(file)) return false;
+
+  const raw = fs.readFileSync(file, "utf-8");
+  return !parsePost(slug, raw).draft;
 }

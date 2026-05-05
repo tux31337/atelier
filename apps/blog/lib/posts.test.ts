@@ -91,4 +91,20 @@ body
     expect(post.image).toBe("/cover.png");
     expect(post.featured).toBe(true);
   });
+
+  it("accepts optional draft field", () => {
+    const raw = `---
+title: "T"
+date: "2026-05-01"
+category: "X"
+excerpt: "x"
+tags: []
+draft: true
+---
+
+body
+`;
+    const post = parsePost("draft-post", raw);
+    expect(post.draft).toBe(true);
+  });
 });
