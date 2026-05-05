@@ -1,0 +1,480 @@
+---
+title: "Promise는 왜 헷갈릴까"
+date: "2026-05-05"
+category: "JavaScript"
+excerpt: "Promise를 비동기 결과를 담는 객체로만 외우면 then, catch, async/await, 마이크로태스크 실행 순서가 계속 헷갈린다. Promise의 상태, executor, then callback, 체이닝, 에러 전파를 실행 흐름 중심으로 정리한다."
+tags: ["JavaScript", "Promise", "Async", "Microtask", "Frontend"]
+---
+
+Promise는 처음 배울 때 쉬운 주제처럼 포장되기 쉽다.
+
+```text
+Promise는 비동기 작업의 성공 또는 실패를 표현하는 객체다.
+```
+
+틀린 말은 아니다. 그런데 이 문장만 외우면 바로 다음 질문에서 막힌다.
+
+```text
+Promise 코드는 바로 실행되나?
+then 안의 함수는 언제 실행되나?
+resolve를 호출하면 바로 then이 도나?
+then을 여러 번 붙이면 무엇이 다음으로 넘어가나?
+catch는 어디에서 에러를 잡나?
+async/await는 Promise와 다른 건가?
+```
+
+Promise가 어려운 이유는 객체 하나 안에 두 가지 시간이 같이 들어 있기 때문이다.
+
+```text
+지금 바로 실행되는 부분
+  Promise 객체 생성
+  new Promise의 executor 함수
+  then, catch, finally를 등록하는 호출
+
+나중에 실행되는 부분
+  then callback
+  catch callback
+  finally callback
+  await 이후 코드
+```
+
+그래서 Promise를 볼 때는 먼저 "이 줄이 지금 실행되는가, 아니면 callback을 나중으로 예약하는가"를 나눠야 한다.
+
+## Promise는 미래 값의 상자다
+
+Promise는 지금 당장 값이 없을 수도 있는 작업의 결과를 표현한다.
+
+예를 들어 서버에서 사용자 정보를 가져오는 코드를 생각해보자.
+
+```js
+const profilePromise = fetch("/api/profile");
+```
+
+이 줄을 실행했다고 해서 사용자 정보가 바로 변수에 들어오는 것은 아니다. 네트워크 요청은 시간이 걸린다. 대신 `profilePromise`에는 "나중에 성공하거나 실패할 수 있는 작업"이 들어 있다.
+
+Promise는 상태를 가진다.
+
+<PromiseLifecycleDiagram />
+
+처음에는 `pending`이다. 아직 결과가 정해지지 않은 상태다.
+
+작업이 성공하면 `fulfilled`가 된다. 이때 성공 값이 생긴다.
+
+작업이 실패하면 `rejected`가 된다. 이때 실패 이유가 생긴다.
+
+성공이든 실패든 한 번 결과가 정해지면 `settled` 상태라고 볼 수 있다. 중요한 점은 한 번 정해진 Promise의 결과는 다시 바뀌지 않는다는 것이다.
+
+```js
+const promise = new Promise((resolve, reject) => {
+  resolve("first");
+  resolve("second");
+  reject(new Error("fail"));
+});
+
+promise.then((value) => {
+  console.log(value);
+});
+```
+
+출력은 하나뿐이다.
+
+```text
+first
+```
+
+처음 `resolve("first")`에서 Promise의 결과가 정해졌기 때문이다. 그 뒤의 `resolve("second")`와 `reject(...)`는 결과를 바꾸지 못한다.
+
+## new Promise의 executor는 바로 실행된다
+
+Promise에서 가장 많이 헷갈리는 부분은 `new Promise`다.
+
+```js
+const promise = new Promise((resolve) => {
+  console.log("executor");
+  resolve("done");
+});
+
+promise.then((value) => {
+  console.log(`then: ${value}`);
+});
+```
+
+이 코드는 `then` 안의 callback만 나중에 실행된다. `new Promise` 안에 넘긴 함수, 즉 executor는 Promise를 만드는 순간 바로 실행된다.
+
+<PromiseExecutorDiagram />
+
+결과는 이렇게 나온다.
+
+```text
+executor
+then: done
+```
+
+여기서 아주 중요한 구분이 있다.
+
+```text
+new Promise(...)
+  -> 지금 Promise 객체를 만든다.
+
+(resolve) => { ... }
+  -> executor다. Promise를 만드는 순간 바로 실행된다.
+
+resolve("done")
+  -> 지금 호출된다.
+  -> 호출 순간 Call Stack에 올라간다.
+  -> Promise를 fulfilled 상태로 만든다.
+
+promise.then(callback)
+  -> callback을 나중에 실행하도록 등록한다.
+
+callback
+  -> 현재 동기 코드가 끝난 뒤 Microtask Queue에서 실행된다.
+```
+
+즉 Promise 코드가 전부 나중에 도는 게 아니다. Promise를 만들고, executor를 실행하고, `then`을 등록하는 일은 지금 일어난다. 나중에 도는 것은 `then` 안의 callback이다.
+
+<Callout title="Promise에서 제일 많이 헷갈리는 한 줄">
+Promise 자체는 지금 만들어진다. executor도 지금 실행된다. 하지만 then 안에 넘긴 callback은 지금 실행되지 않고 마이크로태스크로 예약된다.
+</Callout>
+
+## API 호출로 보면 더 자연스럽다
+
+실제로는 `new Promise`를 직접 쓰는 일보다 `fetch`처럼 Promise를 돌려주는 API를 더 자주 만난다.
+
+```js
+console.log("start");
+
+fetch("/api/profile")
+  .then((response) => response.json())
+  .then((profile) => {
+    console.log(profile.name);
+  });
+
+console.log("end");
+```
+
+이 코드에서 `fetch("/api/profile")`는 지금 호출된다. 하지만 응답 값은 바로 생기지 않는다. 브라우저가 네트워크 요청을 맡고, `fetch`는 일단 `pending` 상태의 Promise를 돌려준다.
+
+<PromiseApiFlowDiagram />
+
+여기서 우리는 `resolve`를 직접 호출하지 않는다. 대신 브라우저의 네트워크 작업이 끝나면 `fetch`가 돌려준 Promise가 내부적으로 `fulfilled` 상태가 된다. 그 뒤에 등록되어 있던 `then` callback이 마이크로태스크 큐로 들어간다.
+
+즉 API 호출에서도 기준은 같다.
+
+```text
+fetch 호출
+  -> 지금 실행된다.
+  -> pending Promise를 돌려준다.
+
+then 등록
+  -> 지금 등록된다.
+  -> callback은 아직 실행되지 않는다.
+
+응답 도착
+  -> Promise가 fulfilled가 된다.
+  -> then callback이 Microtask Queue에 들어간다.
+
+현재 작업이 끝난 뒤
+  -> then callback이 실행된다.
+```
+
+## Promise.resolve().then은 왜 나중에 실행될까
+
+이번에는 더 짧은 코드를 보자.
+
+```js
+console.log("start");
+
+Promise.resolve().then(() => {
+  console.log("promise");
+});
+
+console.log("end");
+```
+
+출력은 이렇다.
+
+```text
+start
+end
+promise
+```
+
+`Promise.resolve()`는 이미 성공한 Promise를 만든다. 그래서 `then` callback을 실행할 준비는 되어 있다. 하지만 callback을 그 자리에서 바로 호출하지 않는다.
+
+Promise의 후속 callback은 마이크로태스크로 들어간다.
+
+```text
+Promise.resolve()
+  -> 이미 fulfilled 상태인 Promise를 만든다.
+
+.then(callback)
+  -> callback을 Microtask Queue에 등록한다.
+
+현재 동기 코드 종료
+  -> Microtask Queue를 비우면서 callback 실행
+```
+
+이 규칙 덕분에 Promise callback은 항상 현재 실행 중인 동기 코드가 끝난 뒤 실행된다.
+
+이벤트 루프 글에서 본 순서와 연결하면 이렇게 된다.
+
+```text
+동기 코드
+  -> Microtask Queue
+  -> Rendering 기회
+  -> 다음 Macrotask
+```
+
+그래서 `Promise.resolve()`처럼 이미 성공한 Promise라도 `.then` callback은 동기 코드 뒤로 밀린다.
+
+## then은 새 Promise를 돌려준다
+
+`then`은 callback을 등록하는 메서드이기도 하지만, 동시에 새 Promise를 돌려준다.
+
+이 점을 이해해야 체이닝이 덜 이상하게 보인다.
+
+```js
+Promise.resolve(1)
+  .then((value) => {
+    return value + 1;
+  })
+  .then((value) => {
+    return value * 10;
+  })
+  .then((value) => {
+    console.log(`result: ${value}`);
+  });
+```
+
+출력은 이렇게 된다.
+
+```text
+result: 20
+```
+
+첫 번째 `then`은 `1`을 받아 `2`를 돌려준다. 그러면 다음 `then`은 그 `2`를 받는다. 두 번째 `then`은 `20`을 돌려준다. 마지막 `then`은 `20`을 받아 출력한다.
+
+<PromiseChainDiagram />
+
+여기서 `return`이 중요하다.
+
+```js
+Promise.resolve(1)
+  .then((value) => {
+    value + 1;
+  })
+  .then((value) => {
+    console.log(value);
+  });
+```
+
+이 코드는 `2`를 출력하지 않는다.
+
+```text
+undefined
+```
+
+첫 번째 `then` callback에서 값을 계산했지만 `return`하지 않았기 때문이다. callback이 아무것도 돌려주지 않으면 다음 `then`은 `undefined`를 받는다.
+
+## then 안에서 Promise를 return하면 기다린다
+
+`then` callback은 일반 값을 return할 수도 있고, Promise를 return할 수도 있다.
+
+```js
+function getUserId() {
+  return Promise.resolve(7);
+}
+
+function getPosts(userId) {
+  return Promise.resolve([`post by ${userId}`]);
+}
+
+getUserId()
+  .then((userId) => {
+    return getPosts(userId);
+  })
+  .then((posts) => {
+    console.log(posts[0]);
+  });
+```
+
+출력은 이렇다.
+
+```text
+post by 7
+```
+
+첫 번째 `then`이 `getPosts(userId)`라는 Promise를 return했다. 그러면 다음 `then`은 그 Promise 객체 자체를 받는 것이 아니라, 그 Promise가 fulfilled 되었을 때의 값을 받는다.
+
+```text
+then callback이 일반 값을 return
+  -> 다음 then은 그 값을 받는다.
+
+then callback이 Promise를 return
+  -> 다음 then은 그 Promise가 해결된 값을 받는다.
+
+then callback이 throw
+  -> 다음 catch로 에러가 넘어간다.
+```
+
+이 규칙 때문에 Promise 체인은 비동기 작업을 순서대로 이어 붙일 수 있다.
+
+## catch는 앞에서 발생한 실패를 잡는다
+
+Promise는 성공만 다루지 않는다. 실패도 같은 체인에서 다룬다.
+
+```js
+Promise.resolve("start")
+  .then(() => {
+    throw new Error("broken");
+  })
+  .then(() => {
+    console.log("skip");
+  })
+  .catch((error) => {
+    console.log(error.message);
+  });
+```
+
+출력은 이렇다.
+
+```text
+broken
+```
+
+첫 번째 `then`에서 에러를 던졌다. 그러면 그 뒤의 성공용 `then`은 건너뛰고, 가장 가까운 `catch`가 에러를 받는다.
+
+`reject`도 비슷하다.
+
+```js
+Promise.reject(new Error("fail"))
+  .then(() => {
+    console.log("success");
+  })
+  .catch((error) => {
+    console.log(error.message);
+  });
+```
+
+출력은 이렇다.
+
+```text
+fail
+```
+
+`catch`도 새 Promise를 돌려준다. 그래서 `catch`에서 복구 값을 return하면 다음 `then`으로 다시 이어갈 수 있다.
+
+```js
+Promise.reject(new Error("fail"))
+  .catch(() => {
+    return "fallback";
+  })
+  .then((value) => {
+    console.log(value);
+  });
+```
+
+출력은 이렇다.
+
+```text
+fallback
+```
+
+에러를 잡고 나면 체인은 다시 성공 흐름으로 돌아올 수 있다.
+
+## finally는 결과를 바꾸기보다 정리할 때 쓴다
+
+`finally`는 성공하든 실패하든 실행된다.
+
+```js
+fetch("/api/profile")
+  .then((response) => response.json())
+  .catch(() => {
+    return null;
+  })
+  .finally(() => {
+    console.log("loading end");
+  });
+```
+
+`finally`는 보통 로딩 상태를 끄거나, 정리 작업을 할 때 쓴다.
+
+```text
+성공해도 실행
+실패해도 실행
+```
+
+다만 `finally`는 값을 변환하기 위한 자리가 아니다. 값을 바꾸려면 `then`이나 `catch`에서 return하는 편이 더 명확하다.
+
+## async/await는 Promise를 다른 모양으로 쓰는 문법이다
+
+`async/await`는 Promise를 없애는 문법이 아니다. Promise를 더 동기 코드처럼 읽히게 만드는 문법이다.
+
+```js
+function getProfile() {
+  return Promise.resolve({ name: "Ada" });
+}
+
+async function run() {
+  const profile = await getProfile();
+  console.log(profile.name);
+}
+
+run();
+```
+
+이 코드는 대략 이런 Promise 체인과 비슷하게 볼 수 있다.
+
+```js
+getProfile().then((profile) => {
+  console.log(profile.name);
+});
+```
+
+`await`를 만나면 async 함수의 나머지 코드는 잠시 끊긴다. 그리고 기다리던 Promise가 해결되면 이어지는 코드는 마이크로태스크로 실행된다.
+
+```text
+await 이전 코드
+  -> 지금 실행
+
+await 대상 Promise
+  -> 해결될 때까지 async 함수의 나머지를 미룸
+
+await 이후 코드
+  -> Promise가 해결된 뒤 Microtask Queue에서 이어서 실행
+```
+
+그래서 `await`는 자바스크립트 전체를 멈추는 명령이 아니다. async 함수의 이어지는 부분을 나중으로 넘기는 지점이다.
+
+## Promise를 읽을 때 보는 순서
+
+Promise 코드를 읽을 때는 문법보다 시간을 먼저 나누면 덜 흔들린다.
+
+```text
+1. 지금 바로 실행되는 코드는 무엇인가?
+   new Promise의 executor
+   Promise.resolve 호출
+   then, catch, finally 등록
+
+2. 나중에 실행되는 callback은 무엇인가?
+   then callback
+   catch callback
+   finally callback
+   await 이후 코드
+
+3. 그 callback은 무엇을 return하는가?
+   일반 값
+   Promise
+   undefined
+   throw
+
+4. 다음 체인은 무엇을 받는가?
+   return한 값
+   return한 Promise의 해결 값
+   throw된 에러
+```
+
+Promise는 단순히 "비동기 처리 문법"이 아니다. 지금 실행되는 코드와 나중에 이어지는 코드를 이어주는 규칙이다.
+
+그래서 Promise를 이해한다는 건 `then`을 외우는 일이 아니다. 어떤 값이 언제 생기고, 어떤 callback이 언제 실행되고, 그 callback이 다음 Promise에 무엇을 넘기는지 따라가는 일이다.

@@ -1,0 +1,300 @@
+---
+title: "브라우저는 어떻게 화면을 그릴까"
+date: "2026-05-05"
+category: "Performance"
+excerpt: "성능 최적화는 기법을 외우는 일이 아니라 브라우저가 화면을 그리는 비용을 따라가며 병목을 줄이는 일이다. DOM, CSSOM, Render Tree, Layout, Paint, Composite 흐름을 기준으로 reflow와 repaint까지 정리한다."
+tags: ["Performance", "Browser", "Rendering", "Frontend"]
+---
+
+프론트엔드 성능 최적화를 처음 보면 할 일이 너무 많아 보인다.
+
+이미지를 줄여야 한다고 하고, 텍스트 압축을 켜야 한다고 하고, 캐싱 헤더를 봐야 한다고 하고, JavaScript 번들을 쪼개야 한다고 한다. Performance 패널, Lighthouse, Network 패널, bundle analyzer 같은 도구도 한꺼번에 나온다.
+
+전부 맞는 말이다. 그런데 어디가 느린지 모른 채 기법부터 붙이면 순서가 흐려진다. 이미지가 문제인지, JavaScript 실행이 문제인지, 레이아웃 계산이 문제인지, 네트워크 대기가 문제인지 구분하지 못하면 성능 최적화는 체크리스트를 따라 하는 일처럼 느껴진다.
+
+그래서 먼저 기준선을 잡으려고 한다. 브라우저가 HTML, CSS, JavaScript를 받아서 실제 화면으로 바꾸는 흐름이다.
+
+<RenderingPipeline />
+
+이 흐름을 이해하면 성능 최적화는 조금 다르게 보인다. "빠르게 만들기"라는 막연한 말이 아니라, 브라우저가 각 단계에서 쓰는 비용을 줄이는 일에 가까워진다.
+
+## 브라우저는 바로 화면을 그리지 않는다
+
+브라우저는 서버에서 HTML을 받자마자 화면에 픽셀을 찍지 않는다. 먼저 문서를 읽고, 구조를 만들고, 스타일을 계산하고, 어떤 요소를 실제로 그릴지 고른다. 그다음 각 요소의 위치와 크기를 계산하고, 색과 텍스트와 이미지를 칠한 뒤, 마지막으로 여러 레이어를 합쳐 화면에 보여준다.
+
+단순하게 쓰면 이런 흐름이다.
+
+```text
+HTML 파싱
+  -> DOM 생성
+
+CSS 파싱
+  -> CSSOM 생성
+
+DOM + CSSOM
+  -> Render Tree 생성
+  -> Layout
+  -> Paint
+  -> Composite
+  -> Screen
+```
+
+여기서 중요한 점은 각 단계가 서로 이어져 있다는 것이다. 앞 단계의 결과가 바뀌면 뒤 단계도 다시 실행될 수 있다. 성능 문제가 생기는 지점도 대부분 이 연결고리 어딘가에 있다.
+
+## HTML은 DOM이 된다
+
+브라우저가 HTML을 읽으면 DOM을 만든다. DOM은 문서의 구조를 트리로 표현한 것이다.
+
+```html
+<main>
+  <h1>브라우저 렌더링</h1>
+  <p>HTML은 DOM으로 바뀐다.</p>
+</main>
+```
+
+이 HTML은 대략 이런 관계를 가진 구조가 된다.
+
+```text
+main
+  -> h1
+  -> p
+```
+
+DOM은 화면 그리기만을 위한 구조가 아니다. JavaScript가 `document.querySelector`로 요소를 찾거나, React가 특정 노드를 갱신하거나, 브라우저가 접근성 트리를 만들 때도 DOM을 기준으로 삼는다.
+
+그래서 HTML이 지나치게 크거나 중첩이 깊으면 브라우저가 문서를 읽고 구조를 만드는 비용도 커진다. 물론 보통의 서비스에서 DOM 생성 자체가 가장 큰 병목이 되는 경우는 많지 않다. 하지만 "HTML은 그냥 문자열이고, 브라우저가 알아서 그린다" 정도로 보면 이후 단계를 이해하기 어렵다. 브라우저는 먼저 문서를 다룰 수 있는 구조로 바꾼다.
+
+## CSS는 CSSOM이 된다
+
+HTML이 DOM이 되는 동안 CSS는 CSSOM이 된다. CSSOM은 어떤 요소에 어떤 스타일이 적용되는지 계산하기 위한 스타일 규칙의 트리다.
+
+```css
+main {
+  max-width: 720px;
+}
+
+h1 {
+  font-size: 40px;
+}
+```
+
+브라우저는 이 규칙을 읽고, 상속과 우선순위와 selector 매칭을 계산한다. 같은 요소에 여러 규칙이 걸려 있으면 어떤 값이 최종 값인지도 정해야 한다.
+
+CSSOM은 렌더링을 막을 수 있다. 브라우저는 DOM만 있다고 해서 바로 화면을 정확히 그릴 수 없다. CSS를 모르면 `h1`의 크기도, `main`의 너비도, 숨겨야 할 요소도 알 수 없기 때문이다.
+
+그래서 CSS 파일이 늦게 도착하면 첫 화면이 늦게 보일 수 있다. Network 패널에서 CSS 요청이 오래 걸리거나, 너무 큰 CSS를 내려받는 상황을 보는 이유도 여기에 있다.
+
+## DOM과 CSSOM은 Render Tree로 합쳐진다
+
+DOM과 CSSOM이 준비되면 브라우저는 Render Tree를 만든다. Render Tree는 실제로 화면에 그려질 요소만 담는다.
+
+예를 들어 `display: none`인 요소는 DOM에는 있지만 Render Tree에는 들어가지 않는다. 화면에 그릴 필요가 없기 때문이다.
+
+```html
+<section>
+  <h2>보이는 제목</h2>
+  <p class="hidden">숨겨진 문장</p>
+</section>
+```
+
+```css
+.hidden {
+  display: none;
+}
+```
+
+이 경우 브라우저는 `section`과 `h2`는 그릴 대상으로 보지만, `.hidden` 문단은 그릴 대상에서 제외한다.
+
+여기서 한 가지를 구분해두면 좋다. `display: none`은 Render Tree에서 빠지지만, `visibility: hidden`은 자리는 차지한 채 보이지 않을 뿐이다. 그리고 `opacity: 0`은 투명하게 그려질 뿐 요소 자체는 여전히 렌더링 흐름 안에 남는다.
+
+이 차이는 성능과 레이아웃을 볼 때 꽤 중요하다. 화면에 안 보인다고 해서 모두 같은 비용을 내는 것은 아니다.
+
+## Layout은 자리 계산이다
+
+Render Tree가 만들어지면 브라우저는 Layout 단계로 넘어간다. 이 단계에서는 각 요소가 화면의 어디에, 어떤 크기로 놓일지 계산한다.
+
+`width`, `height`, `padding`, `margin`, `border`, `font-size`, `line-height`, `position`, `display`, `grid`, `flex` 같은 값들이 이때 실제 배치로 바뀐다.
+
+```text
+이 요소의 너비는 얼마인가
+이 문장은 몇 줄로 접히는가
+다음 요소는 어디에서 시작하는가
+부모의 높이는 자식 때문에 얼마나 늘어나는가
+```
+
+Layout이 비싼 이유는 계산이 한 요소에서 끝나지 않을 수 있기 때문이다. 어떤 요소의 너비가 바뀌면 자식의 줄바꿈이 바뀌고, 자식의 높이가 바뀌면 부모의 높이가 바뀌고, 그다음 형제 요소의 위치까지 바뀔 수 있다.
+
+이렇게 배치 계산이 다시 일어나는 일을 보통 reflow라고 부른다. 현대 브라우저 문서나 DevTools에서는 Layout이라는 이름으로 더 자주 보인다.
+
+## Paint는 보이는 것을 칠하는 일이다
+
+Layout이 "어디에 놓을지"를 계산한다면, Paint는 "어떻게 보이게 할지"를 준비한다.
+
+브라우저는 배경색, 글자색, 테두리, 그림자, 이미지, 텍스트 같은 시각 정보를 픽셀로 칠할 명령으로 바꾼다.
+
+```text
+배경을 칠한다
+테두리를 그린다
+텍스트를 그린다
+그림자를 그린다
+이미지를 그린다
+```
+
+요소의 위치나 크기는 그대로인데 색만 바뀐다면 Layout을 다시 할 필요는 없다. 하지만 화면에 보이는 픽셀은 달라졌으므로 Paint는 다시 필요할 수 있다.
+
+이런 일을 repaint라고 부른다.
+
+예를 들어 `color`, `background-color`, `box-shadow`, `border-color` 같은 속성을 바꾸면 주로 Paint 비용이 발생한다. 특히 넓은 영역의 그림자나 blur처럼 칠해야 할 픽셀이 많고 계산이 복잡한 효과는 Paint 비용을 키울 수 있다.
+
+## Composite는 레이어를 합치는 일이다
+
+마지막은 Composite다. 브라우저는 모든 것을 하나의 평면으로만 그리지 않는다. 특정 요소는 별도의 레이어로 분리될 수 있고, 마지막에 그 레이어들을 합쳐 최종 화면을 만든다.
+
+`transform`이나 `opacity`를 이용한 애니메이션이 상대적으로 성능에 유리하다고 말하는 이유가 여기에 있다. 이 속성들은 많은 경우 Layout과 Paint를 다시 크게 건드리지 않고 Composite 단계에서 처리될 수 있다.
+
+예를 들어 어떤 박스를 오른쪽으로 움직인다고 해보자.
+
+```css
+.bad {
+  left: 100px;
+}
+
+.better {
+  transform: translateX(100px);
+}
+```
+
+`left`를 바꾸면 요소의 배치가 바뀐다. 주변 요소와의 관계를 다시 계산해야 할 수 있으므로 Layout으로 이어질 가능성이 있다.
+
+반면 `transform`은 이미 그려진 레이어를 시각적으로 이동시키는 방식으로 처리될 수 있다. 그래서 애니메이션에서는 `top`, `left`, `width`, `height`보다 `transform`, `opacity`를 우선 고려하는 경우가 많다.
+
+물론 이 말이 `transform`을 아무 곳에나 붙이면 항상 빠르다는 뜻은 아니다. 레이어가 많아지면 메모리 비용도 늘어난다. 중요한 건 브라우저가 어떤 단계를 다시 실행하게 되는지 의식하는 것이다.
+
+## JavaScript는 렌더링 흐름을 멈출 수 있다
+
+브라우저 렌더링에서 JavaScript는 조금 특별하다. JavaScript는 DOM을 읽고 바꿀 수 있고, CSS class를 바꿀 수도 있고, 새로운 요소를 추가할 수도 있다.
+
+즉 JavaScript는 렌더링 파이프라인 중간에 끼어들 수 있다.
+
+```js
+const box = document.querySelector(".box");
+
+box.style.width = "400px";
+box.style.backgroundColor = "tomato";
+```
+
+이 코드는 단순해 보이지만 브라우저 입장에서는 일이 생긴다. `width`가 바뀌었으니 Layout이 다시 필요할 수 있고, `backgroundColor`가 바뀌었으니 Paint도 다시 필요할 수 있다.
+
+더 큰 문제는 JavaScript 실행 자체가 메인 스레드를 오래 붙잡는 경우다. 브라우저는 JavaScript 실행, 스타일 계산, Layout, Paint, 사용자 입력 처리를 모두 메인 스레드에서 처리하는 일이 많다. 긴 JavaScript 작업이 실행 중이면 브라우저는 그동안 화면을 부드럽게 갱신하거나 클릭에 빠르게 반응하기 어렵다.
+
+Performance 패널에서 긴 노란색 작업이 보이거나, Lighthouse에서 main thread work, JavaScript execution time 같은 항목이 나오는 이유가 여기에 있다.
+
+## reflow와 repaint를 구분해야 한다
+
+reflow와 repaint는 성능 글에서 자주 같이 나온다. 둘 다 다시 그리는 일처럼 느껴지지만 비용의 성격이 다르다.
+
+```text
+reflow
+  요소의 크기나 위치를 다시 계산한다.
+  Layout이 다시 발생한다.
+  이후 Paint와 Composite까지 이어질 수 있다.
+
+repaint
+  요소의 시각적 표현을 다시 칠한다.
+  Layout은 그대로일 수 있다.
+  이후 Composite로 이어질 수 있다.
+
+composite
+  이미 준비된 레이어를 합성한다.
+  Layout과 Paint를 피할 수 있는 경우가 있다.
+```
+
+속성으로 보면 대략 이렇게 나눠볼 수 있다.
+
+```text
+Layout을 다시 일으키기 쉬운 속성
+  width, height, margin, padding, border-width
+  top, left, right, bottom
+  font-size, line-height
+  display, position
+
+Paint를 다시 일으키기 쉬운 속성
+  color, background-color
+  border-color
+  box-shadow
+  text-shadow
+
+Composite에서 처리되기 쉬운 속성
+  transform
+  opacity
+```
+
+그래서 애니메이션을 만들 때는 먼저 질문을 바꿔야 한다.
+
+```text
+이 요소를 실제로 다시 배치해야 하나?
+아니면 이미 그려진 것을 움직여 보이게 하면 되나?
+```
+
+대부분의 이동, 확대, 축소, 페이드 인/아웃은 배치 자체를 바꾸지 않아도 된다. 이런 경우에는 `transform`과 `opacity`가 더 적합하다.
+
+## 강제 동기 레이아웃을 조심해야 한다
+
+Layout 비용을 이야기할 때 자주 나오는 문제가 forced synchronous layout이다. 말은 길지만 상황은 단순하다.
+
+JavaScript가 스타일을 바꾼 직후, 다시 레이아웃 정보를 읽으면 브라우저는 최신 값을 알려주기 위해 미뤄둔 Layout을 즉시 실행해야 할 수 있다.
+
+```js
+const box = document.querySelector(".box");
+
+box.style.width = "400px";
+
+const width = box.offsetWidth;
+```
+
+브라우저는 보통 성능을 위해 여러 변경을 모아서 처리하려고 한다. 그런데 `offsetWidth`, `offsetHeight`, `getBoundingClientRect()`처럼 최신 레이아웃 값이 필요한 API를 읽으면 브라우저는 "지금 당장 정확한 값을 계산해야 한다"고 판단할 수 있다.
+
+더 안 좋은 패턴은 읽기와 쓰기를 반복하는 것이다.
+
+```js
+items.forEach((item) => {
+  const height = item.offsetHeight;
+  item.style.height = `${height + 10}px`;
+});
+```
+
+이런 코드는 매 반복마다 Layout 읽기와 쓰기가 섞인다. 요소가 많아지면 브라우저는 같은 종류의 계산을 여러 번 반복하게 된다.
+
+더 나은 방향은 읽기와 쓰기를 분리하는 것이다.
+
+```js
+const heights = items.map((item) => item.offsetHeight);
+
+items.forEach((item, index) => {
+  item.style.height = `${heights[index] + 10}px`;
+});
+```
+
+이렇게 하면 브라우저가 레이아웃 정보를 읽는 작업과 스타일을 바꾸는 작업을 더 예측 가능하게 처리할 수 있다.
+
+## 렌더링 원리는 분석 도구와 연결된다
+
+브라우저 렌더링 흐름을 알고 나면 성능 분석 도구도 덜 막막해진다.
+
+Network 패널은 리소스가 언제 도착하는지 보여준다. HTML, CSS, JavaScript, 이미지가 늦게 도착하면 렌더링의 시작점이 밀린다.
+
+Performance 패널은 메인 스레드가 시간을 어디에 쓰는지 보여준다. JavaScript 실행이 긴지, Layout이 반복되는지, Paint가 무거운지 볼 수 있다.
+
+Lighthouse는 사용자가 체감하는 지표를 중심으로 문제를 요약한다. LCP가 느린지, CLS가 흔들리는지, JavaScript 비용이 큰지 방향을 잡는 데 좋다.
+
+bundle analyzer는 브라우저에 보내기 전의 JavaScript 묶음이 얼마나 큰지 보여준다. 번들이 크면 다운로드도 느려지고, 파싱과 실행 비용도 커진다.
+
+결국 도구들은 서로 다른 말을 하는 게 아니다. 모두 브라우저가 화면을 그리는 흐름의 어느 부분이 비싼지 다른 각도에서 보여준다.
+
+<Callout title="성능 최적화의 기준">
+성능 최적화는 좋은 기법을 많이 붙이는 일이 아니다. 브라우저가 화면을 그리기 위해 하는 일 중에서 지금 가장 비싼 일을 찾고, 그 일을 덜 하게 만드는 과정이다.
+</Callout>
+
+이제 기준선은 생겼다. HTML은 DOM이 되고, CSS는 CSSOM이 되고, 둘은 Render Tree로 합쳐진다. 그다음 Layout, Paint, Composite를 거쳐 화면이 된다. JavaScript는 이 흐름을 도울 수도 있고, 오래 붙잡고 막을 수도 있다.
+
+다음 글부터는 이 흐름을 기준으로 실제 병목을 찾는 방법을 정리하면 된다. Performance 패널에서는 Layout과 Paint가 어디서 반복되는지 보고, Network 패널에서는 리소스가 늦게 도착하는 이유를 보고, Lighthouse에서는 사용자가 체감하는 지표를 확인하고, bundle analyzer에서는 JavaScript 비용이 어디서 커졌는지 보면 된다.

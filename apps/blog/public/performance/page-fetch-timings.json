@@ -1,0 +1,113 @@
+{
+  "detail": {
+    "avgHeadersMs": 72,
+    "avgTotalMs": 79.6,
+    "bytes": 122762,
+    "samples": [
+      {
+        "status": 200,
+        "headersMs": 86.5,
+        "totalMs": 97.7,
+        "bytes": 122762
+      },
+      {
+        "status": 200,
+        "headersMs": 73.5,
+        "totalMs": 79.9,
+        "bytes": 122762
+      },
+      {
+        "status": 200,
+        "headersMs": 68.1,
+        "totalMs": 75.3,
+        "bytes": 122762
+      },
+      {
+        "status": 200,
+        "headersMs": 66.6,
+        "totalMs": 72.3,
+        "bytes": 122762
+      },
+      {
+        "status": 200,
+        "headersMs": 65.3,
+        "totalMs": 73,
+        "bytes": 122762
+      }
+    ]
+  },
+  "list": {
+    "avgHeadersMs": 42.2,
+    "avgTotalMs": 47.2,
+    "bytes": 55237,
+    "samples": [
+      {
+        "status": 200,
+        "headersMs": 53.2,
+        "totalMs": 58.2,
+        "bytes": 55237
+      },
+      {
+        "status": 200,
+        "headersMs": 37.9,
+        "totalMs": 42.6,
+        "bytes": 55237
+      },
+      {
+        "status": 200,
+        "headersMs": 40.6,
+        "totalMs": 45,
+        "bytes": 55237
+      },
+      {
+        "status": 200,
+        "headersMs": 42,
+        "totalMs": 47.8,
+        "bytes": 55237
+      },
+      {
+        "status": 200,
+        "headersMs": 37.2,
+        "totalMs": 42.5,
+        "bytes": 55237
+      }
+    ]
+  },
+  "home": {
+    "avgHeadersMs": 21.6,
+    "avgTotalMs": 24,
+    "bytes": 23821,
+    "samples": [
+      {
+        "status": 200,
+        "headersMs": 20.8,
+        "totalMs": 23.3,
+        "bytes": 23821
+      },
+      {
+        "status": 200,
+        "headersMs": 23.4,
+        "totalMs": 26.7,
+        "bytes": 23821
+      },
+      {
+        "status": 200,
+        "headersMs": 21.1,
+        "totalMs": 23.9,
+        "bytes": 23821
+      },
+      {
+        "status": 200,
+        "headersMs": 21.8,
+        "totalMs": 23.8,
+        "bytes": 23821
+      },
+      {
+        "status": 200,
+        "headersMs": 20.8,
+        "totalMs": 22.5,
+        "bytes": 23821
+      }
+    ]
+  }
+}

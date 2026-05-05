@@ -1,0 +1,411 @@
+{
+  "pageUrl": "http://127.0.0.1:3000/blog/browser-rendering-pipeline",
+  "html": {
+    "status": 200,
+    "bytes": 122762,
+    "cacheControl": "no-cache, must-revalidate",
+    "contentEncoding": "gzip"
+  },
+  "count": 24,
+  "totalBytes": 4455049,
+  "topResources": [
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/05w9_next_dist_compiled_react-dom_0r6u5qa._.js",
+      "path": "/_next/static/chunks/05w9_next_dist_compiled_react-dom_0r6u5qa._.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 1060415
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/05w9_next_dist_client_0ppevk9._.js",
+      "path": "/_next/static/chunks/05w9_next_dist_client_0ppevk9._.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 799147
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/05w9_next_dist_compiled_next-devtools_index_0w3snjp.js",
+      "path": "/_next/static/chunks/05w9_next_dist_compiled_next-devtools_index_0w3snjp.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 746665
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/node_modules__pnpm_12uonsn._.js",
+      "path": "/_next/static/chunks/node_modules__pnpm_12uonsn._.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 532771
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/05w9_next_dist_04sc5oc._.js",
+      "path": "/_next/static/chunks/05w9_next_dist_04sc5oc._.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 265833
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/05w9_next_dist_compiled_react-server-dom-turbopack_0bo766h._.js",
+      "path": "/_next/static/chunks/05w9_next_dist_compiled_react-server-dom-turbopack_0bo766h._.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 175794
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/05w9_next_dist_compiled_0kz62jm._.js",
+      "path": "/_next/static/chunks/05w9_next_dist_compiled_0kz62jm._.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 149115
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/05w9_next_dist_0ix7r8g._.js",
+      "path": "/_next/static/chunks/05w9_next_dist_0ix7r8g._.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 143027
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/05w9_next_dist_build_polyfills_polyfill-nomodule.js",
+      "path": "/_next/static/chunks/05w9_next_dist_build_polyfills_polyfill-nomodule.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 112594
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/turbopack-apps_blog_0pv4vf6._.js",
+      "path": "/_next/static/chunks/turbopack-apps_blog_0pv4vf6._.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 92492
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/%5Broot-of-the-server%5D__11zws1.._.css",
+      "path": "/_next/static/chunks/%5Broot-of-the-server%5D__11zws1.._.css",
+      "status": 200,
+      "type": "text/css; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 58524
+    },
+    {
+      "url": "http://127.0.0.1:3000/blog",
+      "path": "/blog",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 55237
+    },
+    {
+      "url": "http://127.0.0.1:3000/favicon.ico?favicon.0x3dzn~oxb6tn.ico",
+      "path": "/favicon.ico",
+      "status": 200,
+      "type": "image/x-icon",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 25931
+    },
+    {
+      "url": "http://127.0.0.1:3000/",
+      "path": "/",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 23821
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/_0nvl7u4._.js",
+      "path": "/_next/static/chunks/_0nvl7u4._.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 22399
+    },
+    {
+      "url": "http://127.0.0.1:3000/about",
+      "path": "/about",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 21464
+    },
+    {
+      "url": "http://127.0.0.1:3000/archive",
+      "path": "/archive",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 21422
+    },
+    {
+      "url": "http://127.0.0.1:3000/projects",
+      "path": "/projects",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 21399
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/0i4a_%40swc_helpers_cjs_0hvz.20._.js",
+      "path": "/_next/static/chunks/0i4a_%40swc_helpers_cjs_0hvz.20._.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 2054
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/apps_blog_0rqeker._.js",
+      "path": "/_next/static/chunks/apps_blog_0rqeker._.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "",
+      "bytes": 700
+    }
+  ],
+  "resources": [
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/05w9_next_dist_compiled_react-dom_0r6u5qa._.js",
+      "path": "/_next/static/chunks/05w9_next_dist_compiled_react-dom_0r6u5qa._.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 1060415
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/05w9_next_dist_client_0ppevk9._.js",
+      "path": "/_next/static/chunks/05w9_next_dist_client_0ppevk9._.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 799147
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/05w9_next_dist_compiled_next-devtools_index_0w3snjp.js",
+      "path": "/_next/static/chunks/05w9_next_dist_compiled_next-devtools_index_0w3snjp.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 746665
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/node_modules__pnpm_12uonsn._.js",
+      "path": "/_next/static/chunks/node_modules__pnpm_12uonsn._.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 532771
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/05w9_next_dist_04sc5oc._.js",
+      "path": "/_next/static/chunks/05w9_next_dist_04sc5oc._.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 265833
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/05w9_next_dist_compiled_react-server-dom-turbopack_0bo766h._.js",
+      "path": "/_next/static/chunks/05w9_next_dist_compiled_react-server-dom-turbopack_0bo766h._.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 175794
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/05w9_next_dist_compiled_0kz62jm._.js",
+      "path": "/_next/static/chunks/05w9_next_dist_compiled_0kz62jm._.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 149115
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/05w9_next_dist_0ix7r8g._.js",
+      "path": "/_next/static/chunks/05w9_next_dist_0ix7r8g._.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 143027
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/05w9_next_dist_build_polyfills_polyfill-nomodule.js",
+      "path": "/_next/static/chunks/05w9_next_dist_build_polyfills_polyfill-nomodule.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 112594
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/turbopack-apps_blog_0pv4vf6._.js",
+      "path": "/_next/static/chunks/turbopack-apps_blog_0pv4vf6._.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 92492
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/%5Broot-of-the-server%5D__11zws1.._.css",
+      "path": "/_next/static/chunks/%5Broot-of-the-server%5D__11zws1.._.css",
+      "status": 200,
+      "type": "text/css; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 58524
+    },
+    {
+      "url": "http://127.0.0.1:3000/blog",
+      "path": "/blog",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 55237
+    },
+    {
+      "url": "http://127.0.0.1:3000/favicon.ico?favicon.0x3dzn~oxb6tn.ico",
+      "path": "/favicon.ico",
+      "status": 200,
+      "type": "image/x-icon",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 25931
+    },
+    {
+      "url": "http://127.0.0.1:3000/",
+      "path": "/",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 23821
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/_0nvl7u4._.js",
+      "path": "/_next/static/chunks/_0nvl7u4._.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 22399
+    },
+    {
+      "url": "http://127.0.0.1:3000/about",
+      "path": "/about",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 21464
+    },
+    {
+      "url": "http://127.0.0.1:3000/archive",
+      "path": "/archive",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 21422
+    },
+    {
+      "url": "http://127.0.0.1:3000/projects",
+      "path": "/projects",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 21399
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/0i4a_%40swc_helpers_cjs_0hvz.20._.js",
+      "path": "/_next/static/chunks/0i4a_%40swc_helpers_cjs_0hvz.20._.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "gzip",
+      "bytes": 2054
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/apps_blog_0rqeker._.js",
+      "path": "/_next/static/chunks/apps_blog_0rqeker._.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "",
+      "bytes": 700
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/%5Bturbopack%5D_browser_dev_hmr-client_hmr-client_ts_0mtfa5o._.js",
+      "path": "/_next/static/chunks/%5Bturbopack%5D_browser_dev_hmr-client_hmr-client_ts_0mtfa5o._.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "",
+      "bytes": 675
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/apps_blog_app_layout_tsx_0j0cf.l._.js",
+      "path": "/_next/static/chunks/apps_blog_app_layout_tsx_0j0cf.l._.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "",
+      "bytes": 341
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/apps_blog_app_blog_%5Bslug%5D_page_tsx_0cuadyw._.js",
+      "path": "/_next/static/chunks/apps_blog_app_blog_%5Bslug%5D_page_tsx_0cuadyw._.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "",
+      "bytes": 255
+    },
+    {
+      "url": "http://127.0.0.1:3000/_next/static/chunks/05w9_next_dist_client_components_builtin_global-error_0cuadyw.js",
+      "path": "/_next/static/chunks/05w9_next_dist_client_components_builtin_global-error_0cuadyw.js",
+      "status": 200,
+      "type": "application/javascript; charset=UTF-8",
+      "cacheControl": "no-cache, must-revalidate",
+      "contentEncoding": "",
+      "bytes": 212
+    }
+  ]
+}

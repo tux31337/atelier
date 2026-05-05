@@ -1,0 +1,545 @@
+---
+title: "성능 병목은 어디서 찾아야 할까"
+date: "2026-05-05"
+category: "Performance"
+excerpt: "성능 최적화는 감으로 고치는 일이 아니라 브라우저가 어디에서 시간을 쓰는지 먼저 확인하는 일이다. 글 상세 페이지를 예시로 Network, Performance, Lighthouse, bundle analyzer를 어떤 순서로 보면 좋은지 정리한다."
+tags: ["Performance", "DevTools", "Lighthouse", "Network", "Bundle"]
+image: "/performance/finding-performance-cover.png"
+---
+
+이전 글에서는 브라우저가 화면을 그리는 흐름을 정리했다.
+
+```text
+HTML
+  -> DOM
+
+CSS
+  -> CSSOM
+
+DOM + CSSOM
+  -> Render Tree
+  -> Layout
+  -> Paint
+  -> Composite
+```
+
+이 흐름을 알고 나면 성능 최적화의 질문이 조금 바뀐다.
+
+```text
+어떤 최적화 기법을 써야 할까?
+```
+
+보다 먼저 물어야 하는 질문은 이쪽에 가깝다.
+
+```text
+브라우저가 지금 어디에서 시간을 쓰고 있을까?
+```
+
+이미지가 늦게 도착해서 느린 페이지와 JavaScript 실행이 길어서 느린 페이지는 고치는 방법이 다르다. Layout이 반복되어 느린 페이지와 서버 응답이 늦어서 느린 페이지도 다르게 봐야 한다. 그래서 성능 최적화는 기법을 붙이기 전에 병목을 찾는 일부터 시작해야 한다.
+
+이번 글에서는 이 블로그의 글 상세 페이지를 예시로 잡는다.
+
+```text
+/blog/browser-rendering-pipeline
+```
+
+이 페이지는 MDX 본문, 코드 블록, 커스텀 MDX 컴포넌트, 글 메타데이터를 포함한다. 블로그에서 가장 중요한 화면은 글을 읽는 화면이므로, 첫 분석 대상으로도 자연스럽다.
+
+![브라우저 렌더링 원리 글 첫 화면](/performance/browser-rendering-first-view.png)
+
+이 글의 목표는 모든 최적화 기법을 한 번에 적용하는 것이 아니다. 실무에서 먼저 해야 하는 일은 병목을 좁히는 것이다. 병목을 찾고 나면 그다음 기법은 자연스럽게 따라온다.
+
+```text
+Network에서 큰 이미지가 보인다
+  -> 이미지 사이즈 최적화
+  -> 적절한 사이즈 변환
+  -> 이미지 CDN
+  -> 이미지 preload
+  -> Image Lazy Load
+
+Network에서 압축되지 않은 텍스트 리소스가 보인다
+  -> gzip / brotli
+  -> 정적 리소스 캐싱
+
+Performance에서 긴 JavaScript 작업이 보인다
+  -> 병목 코드 제거
+  -> Component Lazy Load
+  -> React Code Splitting
+  -> 컴포넌트 preload
+
+Performance에서 Layout과 Paint가 반복된다
+  -> reflow 줄이기
+  -> repaint 줄이기
+  -> transform / opacity 중심 애니메이션
+
+bundle analyzer에서 큰 패키지가 보인다
+  -> route별 bundle 확인
+  -> 필요 없는 client code 제거
+  -> dynamic import
+```
+
+그래서 이번 글은 성능 최적화 시리즈의 지도 역할을 한다. 어떤 도구로 어떤 문제를 찾고, 그 문제가 어떤 최적화 주제로 이어지는지 정리한다.
+
+## 먼저 측정 환경을 의심한다
+
+성능 분석에서 처음 확인할 것은 점수가 아니다. 측정 환경이다.
+
+같은 페이지라도 개발 서버에서 본 결과와 production 빌드에서 본 결과는 크게 다를 수 있다. 개발 서버는 빠른 피드백을 위해 HMR, source map, 개발 도구, 경고 메시지, React 개발 빌드 같은 비용을 포함한다. 이 상태에서 나온 JavaScript 크기나 요청 개수를 그대로 사용자 성능으로 해석하면 안 된다.
+
+이번에 `http://127.0.0.1:3000/blog/browser-rendering-pipeline`을 열고 리소스를 확인했을 때 가장 먼저 보인 것도 이 지점이었다.
+
+```text
+HTML
+  status: 200
+  decoded size: 약 122KB
+  cache-control: no-cache, must-revalidate
+  content-encoding: gzip
+
+수집된 리소스
+  요청 수: 24개
+  decoded size 합계: 약 4.45MB
+```
+
+큰 리소스 상위에는 실제 페이지 코드보다 개발 환경용 청크가 먼저 보였다.
+
+```text
+react-dom 개발 청크
+  약 1.06MB
+
+next client 개발 청크
+  약 799KB
+
+next-devtools 청크
+  약 747KB
+
+node_modules 묶음
+  약 533KB
+```
+
+여기서 바로 "이 페이지는 JavaScript가 너무 크다"고 결론 내리면 성급하다. `next-devtools`, HMR, 개발용 React 청크가 보인다는 건 지금 측정값이 production 사용자 경험을 그대로 대표하지 않는다는 뜻이다.
+
+<Callout title="첫 번째 병목은 측정 환경일 수 있다">
+Network 패널에서 `next-devtools`, HMR, `no-cache, must-revalidate` 같은 신호가 보이면 먼저 개발 서버에서 측정하고 있는지 확인해야 한다. 최적화 결정을 내릴 때는 production build 기준으로 다시 봐야 한다.
+</Callout>
+
+그렇다고 개발 서버 측정이 아무 의미 없다는 뜻은 아니다. 오히려 좋은 출발점이 된다. DevTools에서 어떤 신호를 먼저 봐야 하는지 연습하기 좋고, production 측정과 비교할 기준도 생긴다.
+
+## Network 패널은 리소스의 도착 순서를 본다
+
+Network 패널은 브라우저가 무엇을, 언제, 얼마나 내려받는지 보여준다.
+
+브라우저 렌더링 흐름으로 보면 Network는 가장 앞단에 있다. HTML, CSS, JavaScript, 이미지, 폰트가 늦게 도착하면 DOM 생성, CSSOM 생성, JavaScript 실행, 이미지 디코딩도 뒤로 밀린다.
+
+직접 확인하는 순서는 단순하다.
+
+```text
+1. Chrome에서 분석할 페이지를 연다.
+2. DevTools를 연다.
+   Windows: F12 또는 Ctrl + Shift + I
+   macOS: Command + Option + I
+3. Network 탭으로 이동한다.
+4. Disable cache를 켠다.
+5. 페이지를 새로고침한다.
+6. 요청 목록과 Waterfall을 확인한다.
+```
+
+여기서 `Disable cache`는 DevTools가 열려 있는 동안만 적용된다. 캐시가 켜진 상태로 보면 이미 받아둔 리소스가 메모리나 디스크 캐시에서 바로 나오기 때문에, 첫 방문자가 실제로 무엇을 내려받는지 보기 어렵다.
+
+새로고침 후에는 상단 필터를 하나씩 눌러보면 좋다.
+
+```text
+Doc
+  HTML 문서가 얼마나 걸렸는지 본다.
+
+CSS
+  렌더링을 막는 스타일시트가 있는지 본다.
+
+JS
+  초기 로딩에 큰 JavaScript가 있는지 본다.
+
+Img
+  이미지 크기와 다운로드 시간을 본다.
+
+Font
+  웹폰트가 늦게 도착하거나 많이 내려오는지 본다.
+```
+
+블로그 글에 캡처를 넣고 싶다면 Network 탭에서 다음 상태를 만들어두면 읽기 좋다.
+
+```text
+1. Disable cache 켜기
+2. 새로고침
+3. Size 컬럼 기준으로 큰 리소스 정렬
+4. Waterfall이 보이도록 DevTools 폭 넓히기
+5. 큰 JS, CSS, 이미지 요청이 보이는 구간 캡처
+```
+
+캡처에서 특히 보여주고 싶은 것은 전체 요청 목록이 아니다. 글에서 주장하려는 한 가지 장면만 보이면 충분하다.
+
+```text
+큰 JS 청크를 설명한다
+  -> JS 필터를 켜고 Size 기준 정렬한 화면
+
+이미지 최적화를 설명한다
+  -> Img 필터를 켜고 큰 이미지 요청이 보이는 화면
+
+preload를 설명한다
+  -> Waterfall에서 preload된 리소스가 먼저 요청되는 화면
+
+캐싱을 설명한다
+  -> Status, Size, Cache-Control 컬럼이 보이는 화면
+```
+
+이번 글에서는 실제 수집한 요청 목록을 바탕으로 Network 패널 화면처럼 읽을 수 있는 이미지를 만들었다. 진짜 DevTools 캡처를 넣을 때도 이 정도 정보가 보이면 충분하다.
+
+![Network 패널 예시](/performance/network-panel-waterfall.png)
+
+이 이미지를 읽을 때 핵심은 파일 이름을 하나하나 외우는 것이 아니다. 상위 리소스가 무엇인지, 그 리소스가 개발 서버에서만 생기는 것인지, production 사용자에게도 전달되는 파일인지 구분하는 것이다.
+
+Network 패널에서 먼저 볼 것은 세 가지다.
+
+```text
+1. 어떤 리소스가 큰가
+2. 어떤 리소스가 늦게 도착하는가
+3. 어떤 리소스가 렌더링을 막는가
+```
+
+이번 페이지의 개발 서버 측정에서는 JavaScript 개발 청크가 상위 대부분을 차지했다. 이건 production 병목이라기보다 측정 환경의 신호다. 하지만 같은 방식으로 production 페이지를 보면 실제로 줄여야 할 파일이 무엇인지 찾을 수 있다.
+
+예를 들어 production 측정에서 이런 결과가 나온다고 해보자.
+
+```text
+큰 이미지
+  LCP 이미지 후보
+  압축이나 사이즈 변환 필요
+
+큰 JavaScript
+  초기 로딩에 필요 없는 코드 포함
+  code splitting 또는 lazy load 후보
+
+큰 CSS
+  사용하지 않는 스타일 포함
+  critical CSS와 나머지 CSS 분리 후보
+
+느린 HTML
+  서버 응답 또는 정적 생성 전략 확인 필요
+```
+
+Network 패널에서는 `Size`와 `Time`만 보는 것이 아니라 `Waterfall`도 같이 봐야 한다. Waterfall은 요청의 순서를 보여준다. 어떤 파일이 다른 파일을 기다리게 만드는지, preload가 실제로 먼저 요청되는지, 폰트나 이미지가 너무 늦게 발견되는지 확인할 수 있다.
+
+이 블로그의 글 상세 페이지처럼 첫 화면에 큰 이미지가 없는 경우에는 이미지보다 HTML, CSS, JS, 폰트가 먼저 의심 대상이 된다. 반대로 글 상단에 실제 cover image가 들어간다면 LCP 후보가 이미지로 바뀔 수 있다.
+
+## Performance 패널은 메인 스레드의 시간을 본다
+
+Network가 리소스 도착을 본다면, Performance 패널은 브라우저가 받은 리소스를 처리하는 시간을 본다.
+
+브라우저는 많은 일을 메인 스레드에서 처리한다.
+
+```text
+JavaScript 실행
+Style recalculation
+Layout
+Paint
+Composite
+사용자 입력 처리
+```
+
+Performance 패널에서 봐야 할 것은 "긴 작업이 있는가"다. JavaScript가 오래 실행되면 브라우저는 그동안 화면을 부드럽게 갱신하기 어렵다. 사용자가 클릭하거나 스크롤해도 반응이 늦을 수 있다.
+
+직접 확인하는 순서는 다음과 같다.
+
+```text
+1. DevTools를 연다.
+2. Performance 탭으로 이동한다.
+3. 새로고침 아이콘 또는 Record 버튼을 누른다.
+4. 페이지 로딩이나 스크롤 같은 분석할 동작을 수행한다.
+5. 기록을 멈춘다.
+6. Main 트랙에서 긴 작업과 Layout, Paint를 확인한다.
+```
+
+처음에는 전체 타임라인을 다 이해하려고 하지 않아도 된다. Main 트랙에서 긴 막대가 어디에 있는지 보고, Summary에 `Scripting`, `Rendering`, `Painting` 중 무엇이 크게 잡히는지만 봐도 충분하다.
+
+렌더링 원리와 연결하면 이렇게 읽을 수 있다.
+
+```text
+긴 Scripting
+  JavaScript 실행 비용이 크다.
+  불필요한 계산, 큰 번들, 무거운 hydration을 의심한다.
+
+반복되는 Recalculate Style
+  class 변경이나 스타일 변경이 자주 일어난다.
+  DOM 변경 패턴을 확인한다.
+
+반복되는 Layout
+  reflow가 자주 발생한다.
+  크기와 위치를 바꾸는 코드, forced synchronous layout을 의심한다.
+
+큰 Paint
+  칠해야 할 영역이 크거나 시각 효과가 무겁다.
+  box-shadow, blur, 큰 배경, 복잡한 레이어를 확인한다.
+```
+
+이번 글 상세 페이지는 본문을 읽는 정적 화면에 가깝다. 그래서 이상적인 상태라면 초기 렌더링 이후에는 긴 JavaScript 작업이나 반복 Layout이 많지 않아야 한다.
+
+다만 현재 구조에서 눈여겨볼 부분은 `NavBar`다. 이 컴포넌트는 현재 경로를 알아야 해서 client component로 되어 있다. 그래서 모든 페이지에서 최소한의 client hydration 비용이 생긴다.
+
+```text
+NavBar
+  -> usePathname 사용
+  -> "use client"
+  -> 모든 페이지에서 client bundle과 hydration 비용 발생
+```
+
+이게 당장 나쁜 구조라는 뜻은 아니다. 현재 nav는 작고 단순하다. 하지만 Performance 패널에서 초기 JavaScript 실행 시간이 문제로 보인다면, "모든 페이지에 공통으로 들어가는 client component가 무엇인가"를 먼저 확인해야 한다.
+
+Performance 패널은 reflow와 repaint를 공부할 때도 중요하다. 코드에서 `width`, `height`, `top`, `left` 같은 값을 자주 바꾸면 Layout이 반복될 수 있다. 반대로 `color`, `box-shadow`, `filter` 같은 시각 표현이 넓은 영역에서 바뀌면 Paint 비용이 커질 수 있다.
+
+```text
+Layout이 반복된다
+  -> reflow 문제를 의심한다.
+  -> 크기와 위치를 바꾸는 코드가 있는지 본다.
+
+Paint가 크다
+  -> repaint 문제를 의심한다.
+  -> 그림자, blur, 큰 배경, 복잡한 스타일을 본다.
+
+Composite 위주로 처리된다
+  -> transform, opacity 중심 변경인지 확인한다.
+```
+
+## Lighthouse는 사용자가 느끼는 증상을 요약한다
+
+Lighthouse는 DevTools의 여러 관찰 지점을 사용자 체감 지표 중심으로 요약해준다.
+
+직접 확인하는 순서는 다음과 같다.
+
+```text
+1. DevTools를 연다.
+2. Lighthouse 탭으로 이동한다.
+3. Mode는 Navigation으로 둔다.
+4. Categories에서 Performance를 선택한다.
+5. Analyze page load를 실행한다.
+6. LCP, CLS, INP, TBT와 Opportunities를 확인한다.
+```
+
+Lighthouse는 production에 가까운 환경에서 보는 것이 좋다. 개발 서버에서는 개발 도구와 HMR 비용이 섞이기 때문에 JavaScript 관련 경고가 실제보다 크게 보일 수 있다.
+
+여기서 중요한 것은 Lighthouse 점수를 목표로 삼는 것이 아니라, 지표가 가리키는 방향을 읽는 것이다.
+
+```text
+LCP
+  가장 큰 콘텐츠가 언제 보였는가
+  첫 화면 이미지, 제목, hero 영역을 확인한다.
+
+CLS
+  화면이 로딩 중 얼마나 흔들렸는가
+  이미지 크기, 폰트 로딩, 동적 삽입 UI를 확인한다.
+
+INP
+  사용자 입력에 얼마나 빨리 반응하는가
+  긴 JavaScript 작업과 이벤트 핸들러를 확인한다.
+
+TBT
+  메인 스레드가 얼마나 오래 막혔는가
+  초기 JavaScript 실행 비용을 확인한다.
+```
+
+글 상세 페이지에서 LCP 후보는 보통 첫 화면의 큰 제목이나 cover image다. 현재 페이지는 실제 cover image 대신 카테고리 첫 글자를 보여주는 placeholder 영역이 있다. 스크린샷 기준으로 보면 제목과 큰 placeholder 영역이 첫 화면에서 가장 눈에 띈다.
+
+이런 경우 Lighthouse 결과를 볼 때는 다음 질문으로 이어가면 된다.
+
+```text
+LCP가 제목인가?
+  폰트 로딩과 HTML 도착 시간이 중요하다.
+
+LCP가 cover 영역인가?
+  이미지가 있다면 이미지 크기, preload, priority를 본다.
+
+CLS가 있는가?
+  hero 영역의 높이가 고정되어 있는지 본다.
+  이미지 width/height 또는 aspect-ratio가 있는지 본다.
+
+TBT가 높은가?
+  client component와 초기 JavaScript를 본다.
+```
+
+Lighthouse는 답을 주는 도구라기보다 질문을 잘 정리해주는 도구에 가깝다. "LCP가 느립니다"라는 결과는 해결책이 아니다. 그 LCP 요소가 무엇인지, 왜 늦게 보이는지 Network와 Performance 패널로 다시 내려가야 한다.
+
+## bundle analyzer는 보내기 전의 JavaScript를 본다
+
+Network 패널은 브라우저가 받은 파일을 보여준다. Performance 패널은 브라우저가 그 파일을 실행하는 비용을 보여준다. bundle analyzer는 그보다 앞단을 본다.
+
+```text
+브라우저에 보내기 전에
+JavaScript 묶음 안에 무엇이 들어갔는가?
+```
+
+Next.js 프로젝트에서는 보통 `@next/bundle-analyzer` 같은 도구를 붙여서 확인한다. 이 저장소는 Next.js 버전이 최신이기 때문에 실제 설정을 바꾸기 전에는 로컬 Next 문서를 먼저 확인해야 한다. 하지만 bundle analyzer를 통해 보려는 질문은 변하지 않는다.
+
+```text
+1. 페이지별 초기 JS에 무엇이 들어갔는가
+2. 특정 route에서만 필요한 코드가 공통 bundle에 섞였는가
+3. 큰 패키지가 정말 첫 화면에 필요한가
+4. dynamic import나 lazy load로 늦출 수 있는가
+```
+
+이 블로그 앱은 `package.json` 기준으로 React, Next 외에도 `lucide-react`, `three`, `@react-three/fiber`, `@react-three/drei` 같은 패키지를 가진다.
+
+이 중 3D 관련 패키지는 홈 화면의 시각적 경험에는 필요할 수 있지만, 글 상세 페이지를 읽는 데 항상 필요한 것은 아닐 수 있다. 만약 bundle analyzer에서 글 상세 페이지 초기 번들에 3D 관련 코드가 섞여 있다면 좋은 최적화 후보가 된다.
+
+```text
+초기 페이지에 꼭 필요한 코드
+  글 제목
+  본문 렌더링
+  nav
+  footer
+  MDX 컴포넌트
+
+초기 페이지에 꼭 필요하지 않을 수 있는 코드
+  홈 전용 3D 장면
+  특정 섹션에서만 쓰는 무거운 인터랙션
+  화면 아래쪽에서만 필요한 컴포넌트
+```
+
+bundle analyzer를 볼 때는 "큰 패키지가 있다"에서 멈추면 안 된다. 더 중요한 질문은 "이 페이지의 첫 화면에 꼭 필요한가"다.
+
+필요하다면 받아야 한다. 필요 없다면 늦게 받아도 된다.
+
+## 도구는 서로 다른 층을 본다
+
+성능 도구를 따로 외우면 복잡해 보이지만, 각 도구가 보는 층을 나누면 단순해진다.
+
+```text
+Network
+  리소스가 언제, 얼마나 도착했는가
+
+Performance
+  브라우저가 메인 스레드에서 무엇을 처리했는가
+
+Lighthouse
+  사용자가 느끼는 지표는 어떤 증상을 보이는가
+
+bundle analyzer
+  보내기 전 JavaScript 묶음 안에 무엇이 들어갔는가
+```
+
+그래서 성능 병목을 찾을 때는 보통 이런 순서가 좋다.
+
+```text
+1. Lighthouse로 큰 증상을 본다.
+2. Network로 리소스 도착과 크기를 본다.
+3. Performance로 메인 스레드와 렌더링 비용을 본다.
+4. bundle analyzer로 JavaScript 묶음의 원인을 본다.
+```
+
+반대로 특정 문제가 이미 보이면 순서를 바꿔도 된다.
+
+```text
+이미지가 너무 늦게 뜬다
+  -> Network부터 본다.
+
+스크롤이나 클릭이 버벅인다
+  -> Performance부터 본다.
+
+배포 후 JS 파일이 갑자기 커졌다
+  -> bundle analyzer부터 본다.
+
+점수는 낮은데 이유를 모르겠다
+  -> Lighthouse로 증상을 분류한다.
+```
+
+## 공부 순서는 이렇게 잡는다
+
+네가 정리하려는 주제들을 한 번에 모두 외우려고 하면 너무 많다. 대신 아래 순서로 공부하면 하나의 이야기로 이어진다.
+
+```text
+1. 브라우저 렌더링 원리
+   DOM, CSSOM, Render Tree, Layout, Paint, Composite
+   reflow, repaint, composite 차이
+
+2. 성능 분석 도구
+   Network
+   Performance
+   Lighthouse
+   webpack-bundle-analyzer
+
+3. 네트워크 비용 줄이기
+   텍스트 압축
+   리소스 캐싱
+   preload
+   CDN
+
+4. 이미지 비용 줄이기
+   이미지 사이즈 최적화
+   적절한 크기로 변환
+   이미지 CDN
+   이미지 preload
+   Image Lazy Load
+
+5. JavaScript 비용 줄이기
+   병목 코드 제거
+   React Code Splitting
+   Component Lazy Load
+   컴포넌트 preload
+
+6. 렌더링 비용 줄이기
+   reflow 줄이기
+   repaint 줄이기
+   transform / opacity 중심 애니메이션
+   layout thrashing 피하기
+```
+
+이 순서가 좋은 이유는 분석과 해결이 서로 연결되기 때문이다.
+
+```text
+Network에서 발견한 문제
+  -> 압축, 캐싱, 이미지, preload로 해결한다.
+
+Performance에서 발견한 문제
+  -> JavaScript 병목, Layout, Paint를 줄인다.
+
+Lighthouse에서 발견한 문제
+  -> LCP, CLS, INP 같은 사용자 지표로 우선순위를 잡는다.
+
+bundle analyzer에서 발견한 문제
+  -> code splitting과 lazy load로 초기 JS를 줄인다.
+```
+
+## 이번 페이지에서 얻은 첫 결론
+
+이번 분석은 아직 production 기준의 최종 진단이 아니다. 오히려 첫 결론은 이것이다.
+
+```text
+지금 열린 페이지는 dev 서버 기준이다.
+따라서 Network의 큰 JavaScript 청크를 곧바로 사용자 병목으로 해석하면 안 된다.
+먼저 production build로 다시 측정해야 한다.
+```
+
+하지만 글감으로는 이 지점이 꽤 중요하다. 성능 분석은 멋진 도구를 켜는 일보다, 지금 보고 있는 숫자가 어떤 환경에서 나온 숫자인지 판단하는 일에서 시작한다.
+
+이번 페이지를 기준으로 다음에 실제로 확인할 항목은 이렇다.
+
+```text
+production build에서 다시 측정하기
+  devtools/HMR 청크가 사라진 상태의 JS 크기 확인
+
+LCP 요소 확인하기
+  큰 제목인지, hero placeholder인지, 이후 cover image인지 확인
+
+초기 client bundle 확인하기
+  NavBar, MDX 컴포넌트, 공통 layout이 만드는 hydration 비용 확인
+
+폰트 비용 확인하기
+  여러 font family와 weight가 첫 화면에 주는 영향 확인
+
+route별 번들 확인하기
+  홈 전용 코드가 글 상세 페이지에 섞이는지 확인
+```
+
+<Callout title="최적화 전의 좋은 상태">
+좋은 성능 분석은 바로 해결책으로 뛰어가지 않는다. 먼저 측정 환경을 확인하고, 사용자가 느끼는 증상을 지표로 보고, 그 증상이 Network, JavaScript 실행, Layout, Paint 중 어디에서 생기는지 좁혀간다.
+</Callout>
+
+다음 단계는 production 기준으로 같은 페이지를 다시 보는 것이다. 그때 dev 서버에서 보였던 `next-devtools`와 HMR 비용이 사라지고, 실제로 사용자에게 전달되는 HTML, CSS, JavaScript, 폰트 비용이 드러난다.
+
+그 결과를 기준으로 이미지 최적화, preload, lazy load, code splitting, reflow와 repaint 줄이기 같은 기법을 적용할 순서를 정하면 된다.

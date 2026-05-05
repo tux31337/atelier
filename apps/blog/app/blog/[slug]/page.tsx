@@ -53,7 +53,9 @@ export default async function PostPage({ params }: Props) {
                 src={post.image}
                 alt={post.title}
                 fill
-                className="object-cover"
+                preload
+                sizes="(max-width: 1024px) calc(100vw - 48px), 976px"
+                className="object-contain"
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center">
