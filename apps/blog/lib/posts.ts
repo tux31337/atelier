@@ -23,6 +23,9 @@ export function parsePost(slug: string, raw: string): Post {
     slug,
     content,
     ...result.data,
+    categoryPath: [result.data.category, result.data.subcategory].filter(
+      (value): value is string => Boolean(value)
+    ),
     readingTime: estimateReadingTime(content),
   };
 }

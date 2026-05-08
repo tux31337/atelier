@@ -32,6 +32,7 @@ Lorem ipsum dolor sit amet.
     expect(post.slug).toBe("test-post");
     expect(post.title).toBe("Test Post");
     expect(post.tags).toEqual(["a", "b"]);
+    expect(post.categoryPath).toEqual(["Architecture"]);
     expect(post.image).toBeUndefined();
     expect(post.readingTime).toBeGreaterThanOrEqual(1);
     expect(post.content).toContain("Lorem ipsum");
@@ -90,6 +91,23 @@ body
     const post = parsePost("with-optionals", raw);
     expect(post.image).toBe("/cover.png");
     expect(post.featured).toBe(true);
+  });
+
+  it("accepts optional subcategory and expands the category path", () => {
+    const raw = `---
+title: "T"
+date: "2026-05-01"
+category: "정보보안"
+subcategory: "보안기사"
+excerpt: "x"
+tags: []
+---
+
+body
+`;
+    const post = parsePost("with-subcategory", raw);
+    expect(post.subcategory).toBe("보안기사");
+    expect(post.categoryPath).toEqual(["정보보안", "보안기사"]);
   });
 
   it("accepts optional draft field", () => {

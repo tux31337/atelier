@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 import { getPost, getAllPosts, postExists } from "@/lib/posts";
+import { getCategoryLabel, getCategoryLead } from "@/lib/categories";
 import { mdxComponents } from "@/components/mdx";
 
 type Props = {
@@ -33,7 +34,7 @@ export default async function PostPage({ params }: Props) {
         <div className="mx-auto max-w-5xl px-6">
           <div className="relative z-10 max-w-3xl space-y-8">
             <div className="inline-block rounded-md border border-border bg-surface-container px-3 py-1 font-code-label text-code-label text-on-surface-variant">
-              {post.category}
+              {getCategoryLabel(post)}
             </div>
             <h1 className="max-w-4xl font-display-xl text-4xl leading-tight md:text-display-xl">
               {post.title}
@@ -60,7 +61,7 @@ export default async function PostPage({ params }: Props) {
             ) : (
               <div className="flex h-full w-full items-center justify-center">
                 <span className="font-headline-lg text-6xl font-semibold text-muted-foreground">
-                  {post.category.slice(0, 1)}
+                  {getCategoryLead(post)}
                 </span>
               </div>
             )}

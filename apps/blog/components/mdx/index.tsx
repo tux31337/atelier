@@ -92,6 +92,52 @@ const orderSteps = [
   },
 ];
 
+const gitCommandAtlas = [
+  {
+    title: "이력을 합치거나 옮기기",
+    commands: ["merge", "rebase", "cherry-pick"],
+    description: "브랜치 사이의 커밋 흐름을 이어 붙이거나 특정 커밋만 골라 옮긴다.",
+  },
+  {
+    title: "되돌리기",
+    commands: ["revert", "reset", "restore"],
+    description: "커밋 이력을 남긴 채 취소할지, 브랜치 위치를 되감을지, 파일만 원복할지 나눈다.",
+  },
+  {
+    title: "위치 바꾸기",
+    commands: ["switch", "checkout"],
+    description: "브랜치나 특정 커밋으로 이동한다. 최신 Git에서는 switch와 restore로 역할이 분리됐다.",
+  },
+  {
+    title: "작업 저장하기",
+    commands: ["add", "commit", "stash"],
+    description: "현재 변경을 스테이징하거나 기록으로 남기거나 잠깐 서랍에 넣어 둔다.",
+  },
+];
+
+const gitStrategyCards = [
+  {
+    title: "Git Flow",
+    fit: "릴리스 절차가 길고 단계가 분명한 팀",
+    points: ["브랜치 역할이 선명하다", "release/hotfix 흐름이 익숙하다", "구조가 무거워질 수 있다"],
+  },
+  {
+    title: "GitHub Flow",
+    fit: "작고 빠른 제품 팀",
+    points: ["main을 항상 배포 가능 상태로 둔다", "기능 브랜치와 PR 중심이다", "구조가 단순하다"],
+  },
+  {
+    title: "Trunk-Based",
+    fit: "CI가 빠르고 자주 통합하는 팀",
+    points: ["짧은 브랜치 수명", "기능 플래그와 궁합이 좋다", "자동화가 약하면 부담이 커진다"],
+  },
+  {
+    title: "Release Branch",
+    fit: "여러 버전을 병행 유지하는 팀",
+    points: ["운영 버전 관리가 쉽다", "핫픽스 전달 경로가 분명하다", "브랜치 관리 복잡도가 높다"],
+  },
+];
+
 const timerSteps = [
   {
     step: "01",
@@ -1156,6 +1202,232 @@ function TaskOrderDiagram() {
   );
 }
 
+function GitCommandAtlasDiagram() {
+  return (
+    <figure className="my-12 rounded-md border border-border bg-surface-container p-5 md:p-6">
+      <figcaption className="mb-5 font-headline-lg text-xl text-secondary">
+        Git 명령어를 질문별로 나누면
+      </figcaption>
+      <div className="grid gap-3 md:grid-cols-2">
+        {gitCommandAtlas.map((group) => (
+          <div key={group.title} className="rounded-md border border-border bg-card p-4">
+            <strong className="font-headline-lg text-lg text-secondary">{group.title}</strong>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {group.commands.map((command) => (
+                <span
+                  key={command}
+                  className="rounded-full border border-border bg-surface-container-high px-3 py-1 font-code-label text-xs text-on-surface"
+                >
+                  {command}
+                </span>
+              ))}
+            </div>
+            <p className="mt-4 mb-0 font-body-md text-sm leading-relaxed text-on-surface-variant">
+              {group.description}
+            </p>
+          </div>
+        ))}
+      </div>
+    </figure>
+  );
+}
+
+function GitRebaseRevertDiagram() {
+  return (
+    <figure className="my-12 rounded-md border border-border bg-surface-container p-5 md:p-6">
+      <figcaption className="mb-5 font-headline-lg text-xl text-secondary">
+        rebase와 revert가 실제로 바꾸는 것
+      </figcaption>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="rounded-md border border-border bg-card p-4">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <strong className="font-headline-lg text-lg text-secondary">rebase</strong>
+            <span className="rounded-full border border-border bg-surface-container-high px-3 py-1 font-code-label text-xs text-on-surface">
+              히스토리 재배치
+            </span>
+          </div>
+          <div className="space-y-3 font-code-label text-sm text-on-surface">
+            <div className="rounded border border-border bg-surface-container-high p-3">
+              <div>main: A --- B --- C --- F</div>
+              <div>feature:          D --- E</div>
+            </div>
+            <div className="flex justify-center text-muted-foreground">
+              <ArrowDown className="size-4" />
+            </div>
+            <div className="rounded border border-border bg-surface-container-high p-3">
+              <div>main: A --- B --- C --- F</div>
+              <div>feature:              D&apos; --- E&apos;</div>
+            </div>
+          </div>
+          <p className="mt-4 mb-0 font-body-md text-sm leading-relaxed text-on-surface-variant">
+            기존 feature 커밋을 최신 기반 위에 다시 적용한다. 그래서 커밋 ID가 바뀔 수 있다.
+          </p>
+        </div>
+
+        <div className="rounded-md border border-border bg-card p-4">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <strong className="font-headline-lg text-lg text-secondary">revert</strong>
+            <span className="rounded-full border border-border bg-surface-container-high px-3 py-1 font-code-label text-xs text-on-surface">
+              취소 커밋 추가
+            </span>
+          </div>
+          <div className="space-y-3 font-code-label text-sm text-on-surface">
+            <div className="rounded border border-border bg-surface-container-high p-3">
+              <div>main: A --- B --- C --- D</div>
+            </div>
+            <div className="flex justify-center text-muted-foreground">
+              <ArrowDown className="size-4" />
+            </div>
+            <div className="rounded border border-border bg-surface-container-high p-3">
+              <div>main: A --- B --- C --- D --- R</div>
+              <div className="mt-2 text-muted-foreground">R = C를 취소하는 새 커밋</div>
+            </div>
+          </div>
+          <p className="mt-4 mb-0 font-body-md text-sm leading-relaxed text-on-surface-variant">
+            기존 이력은 그대로 두고, 반대 작업을 담은 새 커밋을 쌓는다. 공유 브랜치에서 안전한 편이다.
+          </p>
+        </div>
+      </div>
+    </figure>
+  );
+}
+
+function GitMergeRebaseCherryPickDiagram() {
+  return (
+    <figure className="my-12 rounded-md border border-border bg-surface-container p-5 md:p-6">
+      <figcaption className="mb-5 font-headline-lg text-xl text-secondary">
+        merge, rebase, cherry-pick을 한 화면에 놓으면
+      </figcaption>
+      <div className="grid gap-3 xl:grid-cols-3">
+        <div className="rounded-md border border-border bg-card p-4">
+          <strong className="font-headline-lg text-lg text-secondary">merge</strong>
+          <div className="mt-4 rounded border border-border bg-surface-container-high p-3 font-code-label text-sm text-on-surface">
+            <div>main:    A --- B --- C -------- M</div>
+            <div>                    \         /</div>
+            <div>feature:             D --- E --</div>
+          </div>
+          <p className="mt-4 mb-0 font-body-md text-sm leading-relaxed text-on-surface-variant">
+            두 갈래의 역사를 모두 남기며 합친다.
+          </p>
+        </div>
+
+        <div className="rounded-md border border-border bg-card p-4">
+          <strong className="font-headline-lg text-lg text-secondary">rebase</strong>
+          <div className="mt-4 rounded border border-border bg-surface-container-high p-3 font-code-label text-sm text-on-surface">
+            <div>main:    A --- B --- C --- F</div>
+            <div>                           \</div>
+            <div>feature:                    D&apos; --- E&apos;</div>
+          </div>
+          <p className="mt-4 mb-0 font-body-md text-sm leading-relaxed text-on-surface-variant">
+            feature 커밋을 새 기반 위에 다시 얹어 선형 흐름을 만든다.
+          </p>
+        </div>
+
+        <div className="rounded-md border border-border bg-card p-4">
+          <strong className="font-headline-lg text-lg text-secondary">cherry-pick</strong>
+          <div className="mt-4 rounded border border-border bg-surface-container-high p-3 font-code-label text-sm text-on-surface">
+            <div>main:    A --- B --- C --- E&apos;</div>
+            <div>feature:      \</div>
+            <div>               D --- E --- F</div>
+          </div>
+          <p className="mt-4 mb-0 font-body-md text-sm leading-relaxed text-on-surface-variant">
+            브랜치 전체가 아니라 필요한 커밋 하나만 골라서 옮긴다.
+          </p>
+        </div>
+      </div>
+    </figure>
+  );
+}
+
+function GitResetRestoreDiagram() {
+  return (
+    <figure className="my-12 rounded-md border border-border bg-surface-container p-5 md:p-6">
+      <figcaption className="mb-5 font-headline-lg text-xl text-secondary">
+        reset과 restore는 건드리는 대상이 다르다
+      </figcaption>
+      <div className="grid gap-4 lg:grid-cols-[1.2fr_auto_1fr] lg:items-center">
+        <div className="rounded-md border border-border bg-card p-4">
+          <strong className="font-headline-lg text-lg text-secondary">reset</strong>
+          <div className="mt-4 rounded border border-border bg-surface-container-high p-3 font-code-label text-sm text-on-surface">
+            <div>main: A --- B --- C --- D</div>
+            <div>                    ^ HEAD</div>
+          </div>
+          <div className="mt-3 flex justify-center text-muted-foreground">
+            <ArrowDown className="size-4" />
+          </div>
+          <div className="rounded border border-border bg-surface-container-high p-3 font-code-label text-sm text-on-surface">
+            <div>git reset --hard B</div>
+            <div className="mt-2">main: A --- B</div>
+          </div>
+          <p className="mt-4 mb-0 font-body-md text-sm leading-relaxed text-on-surface-variant">
+            브랜치가 가리키는 위치를 움직인다. 옵션에 따라 스테이징과 작업 파일도 함께 되감긴다.
+          </p>
+        </div>
+
+        <div className="flex justify-center text-muted-foreground lg:block">
+          <ArrowRight className="hidden size-5 lg:block" />
+          <ArrowDown className="size-5 lg:hidden" />
+        </div>
+
+        <div className="rounded-md border border-border bg-card p-4">
+          <strong className="font-headline-lg text-lg text-secondary">restore</strong>
+          <div className="mt-4 space-y-3">
+            <div className="rounded border border-border bg-surface-container-high p-3">
+              <span className="font-code-label text-sm text-on-surface">
+                git restore src/app.ts
+              </span>
+              <p className="mt-2 mb-0 font-body-md text-sm leading-relaxed text-on-surface-variant">
+                작업 파일 내용만 원래대로 돌린다.
+              </p>
+            </div>
+            <div className="rounded border border-border bg-surface-container-high p-3">
+              <span className="font-code-label text-sm text-on-surface">
+                git restore --staged src/app.ts
+              </span>
+              <p className="mt-2 mb-0 font-body-md text-sm leading-relaxed text-on-surface-variant">
+                스테이징만 빼고 작업 파일은 남긴다.
+              </p>
+            </div>
+          </div>
+          <p className="mt-4 mb-0 font-body-md text-sm leading-relaxed text-on-surface-variant">
+            히스토리보다 파일 상태를 다룰 때 떠올리면 덜 헷갈린다.
+          </p>
+        </div>
+      </div>
+    </figure>
+  );
+}
+
+function GitStrategyDiagram() {
+  return (
+    <figure className="my-12 rounded-md border border-border bg-surface-container p-5 md:p-6">
+      <figcaption className="mb-5 font-headline-lg text-xl text-secondary">
+        팀 전략도 모양으로 보면 빠르게 구분된다
+      </figcaption>
+      <div className="grid gap-3 xl:grid-cols-4">
+        {gitStrategyCards.map((card) => (
+          <div key={card.title} className="rounded-md border border-border bg-card p-4">
+            <strong className="font-headline-lg text-lg text-secondary">{card.title}</strong>
+            <div className="mt-3 rounded border border-border bg-surface-container-high px-3 py-2 font-code-label text-xs text-on-surface">
+              {card.fit}
+            </div>
+            <div className="mt-4 space-y-2">
+              {card.points.map((point) => (
+                <div
+                  key={point}
+                  className="rounded border border-border bg-surface-container-high px-3 py-2 font-body-md text-sm leading-relaxed text-on-surface-variant"
+                >
+                  {point}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </figure>
+  );
+}
+
 export const mdxComponents = {
   h2: ({ children, ...props }: HeadingProps) => (
     <h2
@@ -1274,4 +1546,9 @@ export const mdxComponents = {
   PromiseChainDiagram,
   EventLoopDiagram,
   TaskOrderDiagram,
+  GitCommandAtlasDiagram,
+  GitRebaseRevertDiagram,
+  GitMergeRebaseCherryPickDiagram,
+  GitResetRestoreDiagram,
+  GitStrategyDiagram,
 };
