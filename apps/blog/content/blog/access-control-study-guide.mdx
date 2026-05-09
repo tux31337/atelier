@@ -1,0 +1,372 @@
+---
+title: "접근통제 정리: 식별·인증·인가 절차와 DAC·MAC·RBAC 보안모델"
+date: "2026-05-09"
+category: "정보보안기사"
+subcategory: "정보보안일반"
+excerpt: "정보보안기사 시험에 반복 출제되는 접근통제 구성요소와 3단계 절차, 사용자 인증 5유형, DAC·MAC·RBAC 세 가지 보안모델을 BLP·Biba 속성까지 묶어 정리한다."
+tags: ["정보보안기사", "접근통제", "DAC", "MAC", "RBAC", "BLP", "Biba"]
+---
+
+접근통제는 정보보안기사에서 **3단계 절차의 순서**, **인증 유형 5가지의 키워드**, **DAC·MAC·RBAC의 비교**, **BLP와 Biba의 속성**이 거의 매 회차 나오는 주제다.
+특히 BLP와 Biba의 No-Read·No-Write 규칙은 방향을 바꿔 묻기 쉬워 정확히 외워야 한다.
+
+이번 글에서는 접근통제의 정의부터 세 가지 보안모델까지 시험에 필요한 범위로 정리한다.
+
+## 접근통제란 무엇인가
+
+**접근통제**(Access Control)는 적절한 접근 권한을 가진 **인가된 사용자**만이 정보자산에 접근할 수 있도록 통제하는 것이다.
+누가, 무엇에, 어떻게 접근하는지를 규정하고, 인가되지 않은 접근을 막는 일련의 보안 메커니즘이다.
+
+접근통제는 다음 세 가지 요소로 구성된다.
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[680px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-32 border-b border-border px-4 py-3 font-semibold">구성요소</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">설명</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">주체</td>
+        <td className="border-b border-border px-4 py-3">접근을 요청하는 측이다. 사람, 프로세스, 시스템이 모두 주체가 될 수 있다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">객체</td>
+        <td className="border-b border-border px-4 py-3">주체가 접근하려는 대상이다. 정보, 프로그램, 시스템 자원 등이 해당한다.</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">접근</td>
+        <td className="px-4 py-3">주체와 객체 사이에서 일어나는 정보 흐름이다. 읽기, 쓰기, 실행, 생성, 삭제, 검색 등 행위 단위로 본다.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+시험에서는 "프로세스가 파일을 읽는 동작에서 주체와 객체는?" 같은 식으로 묻는다.
+주체는 행위를 일으키는 쪽, 객체는 행위가 향하는 쪽이라고 잡아두면 헷갈리지 않는다.
+
+## 접근통제 절차 3단계
+
+접근통제는 항상 세 단계 순서로 진행한다. 순서를 바꿔서 묻는 함정 문제가 자주 나오기 때문에 식별이 먼저인지 인증이 먼저인지 정확히 기억해야 한다.
+
+```text
+식별 (Identification)
+  -> 인증 (Authentication)
+  -> 인가 / 권한 부여 (Authorization)
+```
+
+각 단계의 역할은 다음과 같다.
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[760px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-28 border-b border-border px-4 py-3 font-semibold">단계</th>
+        <th className="w-72 border-b border-border px-4 py-3 font-semibold">의미</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">예시</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">식별</td>
+        <td className="border-b border-border px-4 py-3">주체가 자신이 누구인지 시스템에 주장하는 단계다.</td>
+        <td className="border-b border-border px-4 py-3">사용자 ID 입력</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">인증</td>
+        <td className="border-b border-border px-4 py-3">주체가 주장한 신원이 실제 그 사람인지 검증하는 단계다.</td>
+        <td className="border-b border-border px-4 py-3">패스워드, 스마트카드, 지문 등</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">인가</td>
+        <td className="px-4 py-3">검증된 주체에게 어떤 자원에 어느 권한까지 허용할지 결정하는 단계다.</td>
+        <td className="px-4 py-3">ACL, 보안 등급, 역할 매핑</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+식별은 "내가 ㅇㅇㅇ다"라는 **주장**, 인증은 그 주장이 **진짜임을 확인**하는 절차, 인가는 그 사람에게 **무엇을 허용할지** 결정하는 단계로 분리해서 외운다.
+ID 없이 인증부터 진행하거나, 인가 결정 없이 자원에 접근시키는 것은 모두 절차 위반이다.
+
+## 접근통제 기본 원칙
+
+접근통제 정책을 설계할 때 지켜야 하는 기본 원칙은 세 가지다.
+
+첫째, **입력의 신뢰성**이다. 식별과 인증의 입력값이 위·변조되지 않고 신뢰할 수 있어야 한다. 도용된 ID와 약한 패스워드 조합으로는 신뢰성을 보장할 수 없다.
+
+둘째, **직무 분리**(Separation of Duty)다. 하나의 작업을 여러 사람에게 나누어 한 사람이 단독으로 부정을 일으킬 수 없게 만든다. 합법적 사용자가 자신의 권한을 악용해 불법적으로 자료를 수정하는 위험을 줄이는 것이 목적이다.
+
+셋째, **최소 권한 부여**(Least Privilege)다. 사용자에게 업무 수행에 필요한 최소한의 권한만 부여한다. 불필요한 권한은 사고 발생 시 피해 범위를 키우기 때문에 일상적으로 제거 상태를 유지해야 한다.
+
+## 사용자 인증 5가지 유형
+
+인증은 어떤 근거로 신원을 확인하느냐에 따라 5가지로 나뉜다. 시험에서는 Type 번호와 키워드, 예시를 짝지어 묻는다.
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[820px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-20 border-b border-border px-4 py-3 font-semibold">Type</th>
+        <th className="w-32 border-b border-border px-4 py-3 font-semibold">분류</th>
+        <th className="w-48 border-b border-border px-4 py-3 font-semibold">키워드</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">예시</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">Type 1</td>
+        <td className="border-b border-border px-4 py-3">지식기반</td>
+        <td className="border-b border-border px-4 py-3">Something you know</td>
+        <td className="border-b border-border px-4 py-3">패스워드, PIN</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">Type 2</td>
+        <td className="border-b border-border px-4 py-3">소유기반</td>
+        <td className="border-b border-border px-4 py-3">Something you have</td>
+        <td className="border-b border-border px-4 py-3">스마트카드, OTP, 인증 토큰</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">Type 3</td>
+        <td className="border-b border-border px-4 py-3">존재기반</td>
+        <td className="border-b border-border px-4 py-3">Something you are</td>
+        <td className="border-b border-border px-4 py-3">지문, 홍채, 망막, 정맥, 안면</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">Type 4</td>
+        <td className="border-b border-border px-4 py-3">위치기반</td>
+        <td className="border-b border-border px-4 py-3">Somewhere you are</td>
+        <td className="border-b border-border px-4 py-3">IP/MAC 주소, 콜백</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">Type 5</td>
+        <td className="px-4 py-3">행위기반</td>
+        <td className="px-4 py-3">Something you do</td>
+        <td className="px-4 py-3">키스트로크 패턴, 서명, 걸음걸이, 음성</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+여기서 가장 자주 출제되는 함정은 다중 요소 인증의 정의다.
+
+<Callout title="2-Factor 인증은 서로 다른 유형의 조합이다">
+2-Factor 인증은 단순히 인증 수단을 두 개 쓰는 것이 아니다. **서로 다른 Type**에 속하는 인증 수단을 결합해야 한다.
+패스워드와 PIN은 둘 다 Type 1(지식기반)이므로 두 개를 같이 써도 2-Factor 인증이 아니다.
+반면 패스워드(Type 1)와 OTP(Type 2)의 조합은 지식기반과 소유기반의 결합이므로 2-Factor 인증으로 인정된다.
+</Callout>
+
+## 접근통제 보안모델 세 가지
+
+접근통제 정책을 구현하는 모델은 크게 DAC, MAC, RBAC 세 가지다.
+누가 권한을 결정하고 어떤 기준으로 통제하는지가 모델마다 다르다.
+
+### DAC: 임의적 접근통제
+
+**DAC**(Discretionary Access Control)는 자원의 **소유자**가 다른 사용자의 접근 권한을 임의로 지정할 수 있는 모델이다. 사용자의 신원(ID)을 기준으로 접근 권한을 부여한다.
+유닉스/리눅스의 파일 권한, 윈도우의 NTFS 권한이 대표적인 DAC 구현이다.
+
+접근 권한을 표현하는 방법은 세 가지다.
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[820px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-32 border-b border-border px-4 py-3 font-semibold">방법</th>
+        <th className="w-40 border-b border-border px-4 py-3 font-semibold">기준</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">특징</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">ACM</td>
+        <td className="border-b border-border px-4 py-3">주체 × 객체 매트릭스</td>
+        <td className="border-b border-border px-4 py-3">행은 주체, 열은 객체로 둔 2차원 표다. 빈 엔트리가 많아 실제 환경에서는 거의 쓰이지 않는다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">ACL</td>
+        <td className="border-b border-border px-4 py-3">객체 기준</td>
+        <td className="border-b border-border px-4 py-3">각 객체마다 누가 어떤 권한을 갖는지 목록으로 관리한다. 파일 시스템에서 가장 흔하다.</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">CL</td>
+        <td className="px-4 py-3">주체 기준</td>
+        <td className="px-4 py-3">각 사용자가 어떤 객체에 어떤 권한을 갖는지 목록으로 관리한다. 권한 목록을 토큰처럼 들고 다니는 형태다.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+DAC의 장점은 유연성이다. 소유자가 자기 자원의 권한을 직접 설정하므로 변경이 빠르다.
+하지만 단점이 명확하다.
+중앙 집중적인 통제가 어렵고, 조직 전체에 일관된 정책을 적용하기 힘들다.
+신원이 위장된 불법 접근이 발생하면 피해가 즉시 확산된다.
+
+특히 시험에서는 DAC가 **트로이목마 공격에 취약**하다는 점을 묻는다.
+트로이목마는 합법적 사용자의 권한으로 실행되면서 그 사용자가 가진 모든 접근 권한을 그대로 행사할 수 있다. DAC는 신원 기반이라 이 동작을 막을 방법이 없다.
+
+### MAC: 강제적 접근통제
+
+**MAC**(Mandatory Access Control)는 주체의 **보안 취급인가**(clearance)와 객체의 **보안 수준**(classification)을 비교해 접근을 결정하는 모델이다.
+사용자가 임의로 권한을 바꿀 수 없고, 보안 레이블 설정 권한은 **관리자에게만** 있다.
+군이나 정부 같은 등급 분류 환경에서 주로 쓴다.
+
+MAC를 구현하는 대표 모델은 네 가지다.
+
+#### BLP (Bell-LaPadula) 모델
+
+BLP는 최초의 수학적 접근통제 모델로, **기밀성** 보장이 목표다.
+높은 등급의 정보가 낮은 등급으로 흘러나가는 것을 막는 것이 핵심이다.
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[760px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-44 border-b border-border px-4 py-3 font-semibold">속성</th>
+        <th className="w-40 border-b border-border px-4 py-3 font-semibold">규칙</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">의미</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">SS-Property</td>
+        <td className="border-b border-border px-4 py-3">No Read Up</td>
+        <td className="border-b border-border px-4 py-3">자기보다 높은 등급 객체는 읽을 수 없다. 위의 비밀을 아래로 빼올 수 없다.</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">*-Property</td>
+        <td className="px-4 py-3">No Write Down</td>
+        <td className="px-4 py-3">자기보다 낮은 등급 객체에 쓸 수 없다. 위의 비밀을 아래로 흘릴 수 없다.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+#### Biba 모델
+
+Biba는 **무결성** 보장을 목표로 한 상업용 접근통제 모델이다.
+무결성의 세 가지 목표 중 **비인가자에 의한 위·변조 방지**만 해결한다는 점에 주의해야 한다.
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[760px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-52 border-b border-border px-4 py-3 font-semibold">속성</th>
+        <th className="w-40 border-b border-border px-4 py-3 font-semibold">규칙</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">의미</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">Simple Integrity Axiom</td>
+        <td className="border-b border-border px-4 py-3">No Read Down</td>
+        <td className="border-b border-border px-4 py-3">자기보다 낮은 무결성 객체는 읽을 수 없다. 신뢰도 낮은 데이터가 위로 올라오는 것을 막는다.</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">*-Integrity Axiom</td>
+        <td className="px-4 py-3">No Write Up</td>
+        <td className="px-4 py-3">자기보다 높은 무결성 객체에 쓸 수 없다. 신뢰도 낮은 주체가 위를 오염시키지 못하게 한다.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+BLP와 Biba는 규칙의 방향이 정확히 반대다. 헷갈리지 않도록 묶어서 외운다.
+
+```text
+BLP  (기밀성)
+  -> No Read Up   : 위를 읽지 마
+  -> No Write Down : 아래로 쓰지 마
+
+Biba (무결성)
+  -> No Read Down  : 아래를 읽지 마
+  -> No Write Up   : 위로 쓰지 마
+```
+
+기밀성은 "비밀이 위에서 아래로 새지 않게", 무결성은 "신뢰가 아래에서 위로 오염되지 않게"라는 방향으로 이해하면 규칙을 바꾸지 않게 된다.
+
+#### Clark-Wilson 모델
+
+Clark-Wilson은 상업적 응용 환경에서 무결성의 **세 가지 목표를 모두** 보장하는 모델이다.
+비인가자의 위·변조 방지에 더해 인가자의 부정한 수정 방지, 내·외부 일관성 유지까지 포함한다.
+잘 정의된 트랜잭션(well-formed transaction)과 직무 분리를 핵심 메커니즘으로 사용한다.
+
+#### Chinese Wall 모델
+
+Chinese Wall은 이해관계 충돌 환경에서 **기밀성과 무결성을 동시에** 보장하는 모델이다.
+한 사용자가 경쟁 관계에 있는 두 회사의 정보를 동시에 접근하지 못하도록 동적으로 통제한다.
+컨설팅, 금융, 법률처럼 이해 충돌이 발생할 수 있는 도메인에 적용한다.
+
+### RBAC: 역할 기반 접근통제
+
+**RBAC**(Role Based Access Control)는 사용자에게 부여된 **역할**(Role)과 역할이 가진 권한을 기반으로 접근을 통제하는 모델이다.
+사용자가 임의로 권한을 지정할 수 없다는 점에서 비임의적 접근통제(Non-DAC)로 분류된다.
+
+RBAC는 다음 환경에서 가장 효과적이다.
+
+```text
+RBAC가 잘 맞는 환경
+  -> 사용자 수가 많다
+  -> 접근권한이 자주 변경된다
+  -> 부서 이동이 잦은 조직 구조다
+```
+
+조직이 커질수록 사용자별로 권한을 일일이 관리하기 어렵다.
+역할 단위로 권한을 묶어두면 사람이 바뀌어도 역할만 갈아 끼우면 되고, 권한 변경도 역할 정의 한 곳에서 끝난다.
+
+장점은 두 가지다.
+첫째, 관리자에 의한 **일관된 정책 적용**이 가능하다. 신원 기반이 아니라 역할 기반이므로 같은 역할의 사용자에게는 같은 권한이 적용된다.
+둘째, **직무 분리와 최소 권한 부여** 원칙을 자연스럽게 구현할 수 있다. 역할 자체를 직무 단위로 정의하고 필요한 권한만 묶기 때문이다.
+
+단점은 유연성이다.
+DAC처럼 사용자가 자기 자원에 대해 권한을 즉시 조정할 수는 없다.
+역할 정의 자체를 관리자가 관리해야 하므로 권한 변경 요청이 행정 절차를 거쳐야 한다.
+
+세 모델의 차이를 한 줄로 잡아두면 다음과 같다.
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[820px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-24 border-b border-border px-4 py-3 font-semibold">모델</th>
+        <th className="w-44 border-b border-border px-4 py-3 font-semibold">기준</th>
+        <th className="w-32 border-b border-border px-4 py-3 font-semibold">권한 결정 주체</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">대표 환경</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">DAC</td>
+        <td className="border-b border-border px-4 py-3">사용자 신원(ID)</td>
+        <td className="border-b border-border px-4 py-3">자원 소유자</td>
+        <td className="border-b border-border px-4 py-3">파일 시스템, 일반 서버</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">MAC</td>
+        <td className="border-b border-border px-4 py-3">보안 등급(레이블)</td>
+        <td className="border-b border-border px-4 py-3">관리자</td>
+        <td className="border-b border-border px-4 py-3">군, 정부, 등급 분류 시스템</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">RBAC</td>
+        <td className="px-4 py-3">사용자 역할(Role)</td>
+        <td className="px-4 py-3">관리자</td>
+        <td className="px-4 py-3">대규모 기업, 자주 변하는 조직</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+## 시험 출제 포인트 정리
+
+마지막으로 시험에서 반복되는 함정만 모아 둔다.
+
+- 접근통제 절차는 **식별 → 인증 → 인가** 순이다. 인증이 먼저인지 식별이 먼저인지 바꿔서 묻는다.
+- 2-Factor 인증은 **서로 다른 Type**의 조합이다. 패스워드 + PIN은 둘 다 Type 1이므로 2-Factor가 아니다.
+- **BLP는 기밀성, Biba는 무결성**이다. 모델 이름과 보호 목표를 짝지어 외운다.
+- BLP는 **No Read Up · No Write Down**, Biba는 **No Read Down · No Write Up**이다. 방향이 정확히 반대다.
+- DAC의 핵심 단점은 **트로이목마 공격 취약성**이다. 신원 기반이라 합법적 사용자의 권한을 그대로 도용당한다.
+- RBAC는 **사용자가 많고 권한 변경이 잦은 조직**에 적합하다. 부서 이동이 많은 환경에서 가장 효과적이다.
+- 직무 분리와 최소 권한 부여는 접근통제 기본 원칙이면서, RBAC가 자연스럽게 구현해주는 두 가지 원칙이다.
