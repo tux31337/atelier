@@ -1,0 +1,345 @@
+---
+title: "디지털 포렌식 정리: 기본원칙, 절차, 안티 포렌식, 윈도우 명령어"
+date: "2026-05-09"
+category: "정보보안기사"
+subcategory: "정보보안일반"
+excerpt: "정보보안기사 시험에 자주 나오는 디지털 포렌식의 정의, 기본원칙 5가지, 연계 보관성, 포렌식 절차, 안티 포렌식, 윈도우 휘발성 데이터 수집 명령어를 정리한다."
+tags: ["정보보안기사", "디지털 포렌식", "Chain of Custody", "안티 포렌식", "휘발성 데이터"]
+---
+
+디지털 포렌식은 침해사고 대응과 보안 조사에서 자주 등장하지만, 정보보안기사 시험에서는 비교적 암기 포인트가 뚜렷한 주제다.  
+핵심은 **법적으로 유효한 증거**를 어떻게 수집하고, 변경 없이 보관했음을 어떻게 입증하는지다.
+
+이번 글에서는 디지털 포렌식의 정의, 기본원칙 5가지, 절차, 안티 포렌식, 그리고 윈도우 휘발성 데이터 수집 명령어를 한 번에 정리한다.
+
+## 디지털 포렌식이란 무엇인가
+
+**디지털 포렌식**은 침해사고 발생 시 디지털기기로부터 **법적으로 유효한 증거**를 수집, 분석, 보관, 제출하는 일련의 과정을 다루는 과학 분야다.
+
+짧게 줄이면 다음과 같다.
+
+```text
+디지털 포렌식 = 디지털 증거를 법적으로 유효하게 다루는 절차와 기술
+```
+
+여기서 중요한 점은 단순히 데이터를 찾는 것이 아니라는 점이다.  
+증거로 인정받기 위해서는 수집 방법, 분석 과정, 보관 상태, 제출 절차가 모두 설명 가능해야 한다.
+
+디지털 포렌식의 기본 배경으로 자주 언급되는 것이 **로카르드의 교환법칙**이다.
+
+```text
+로카르드의 교환법칙
+  -> 범죄자는 범죄 현장을 드나들 때 흔적을 남기고,
+     무언가를 가지고 떠난다.
+```
+
+디지털 환경에서도 마찬가지다. 공격자는 로그, 프로세스, 네트워크 연결, 파일 흔적, 계정 사용 기록 같은 디지털 흔적을 남길 수 있다.
+
+## 디지털 포렌식 기본원칙 5가지
+
+디지털 포렌식 기본원칙은 시험에서 그대로 암기해야 한다.  
+암기 순서는 **정 · 재 · 무 · 신 · 연**으로 잡으면 좋다.
+
+```text
+정 · 재 · 무 · 신 · 연
+  -> 정당성, 재현성, 무결성, 신속성, 연계 보관성
+```
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[760px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-40 border-b border-border px-4 py-3 font-semibold">원칙</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">설명</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">정당성의 원칙</td>
+        <td className="border-b border-border px-4 py-3">전 과정이 적법한 절차에 의해 이루어져야 한다. 위법수집증거 배제원칙, 독수독과 이론과 연결된다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">재현성의 원칙</td>
+        <td className="border-b border-border px-4 py-3">동일 조건에서 같은 절차로 재현하면 항상 같은 결과가 나와야 한다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">무결성의 원칙</td>
+        <td className="border-b border-border px-4 py-3">수집된 증거가 분석과 보관 과정에서 위변조되지 않아야 한다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">신속성의 원칙</td>
+        <td className="border-b border-border px-4 py-3">디지털 데이터는 쉽게 사라질 수 있으므로 가능하면 신속하게 수집과 분석을 진행해야 한다.</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">연계 보관성 원칙</td>
+        <td className="px-4 py-3">수집부터 법정 제출까지 승계 내역을 기록해 변경 없이 관리되었음을 입증해야 한다.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+시험 직전에는 이렇게 압축해서 외우면 된다.
+
+```text
+정 = 적법한 절차
+재 = 같은 조건, 같은 결과
+무 = 위변조 없음
+신 = 휘발성 때문에 빠르게
+연 = 수집부터 제출까지 승계 내역 기록
+```
+
+## 연계 보관성: Chain of Custody
+
+**연계 보관성(CoC, Chain of Custody)** 은 디지털 증거가 수집된 뒤 법정에 제출될 때까지 변경 없이 관리되었음을 입증하는 원칙이다.  
+**보관의 연속성 원칙**이라고도 한다.
+
+단계는 다음 순서로 외우면 된다.
+
+```text
+수집(획득) -> 이송(이동) -> 보관 -> 분석 -> 법정 제출
+```
+
+핵심은 증거물 관리 주체가 바뀔 때마다 누가, 언제, 어떤 상태로 증거를 넘겨받았는지 기록하는 것이다.  
+이 기록이 있어야 증거가 중간에 변경되거나 훼손되지 않았다는 점을 설명할 수 있다.
+
+## 디지털 포렌식 5단계 절차
+
+디지털 포렌식 절차는 보통 5단계로 정리한다.
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[760px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-44 border-b border-border px-4 py-3 font-semibold">단계</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">핵심 내용</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">1단계 · 사전 준비</td>
+        <td className="border-b border-border px-4 py-3">도구를 확보하고 사전에 테스트한다. 대표 도구로 EnCase, FTK 등이 있다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">2단계 · 증거 수집</td>
+        <td className="border-b border-border px-4 py-3">무결성을 보장하면서 디지털 증거를 수집한다. 휘발성이 높은 것부터 수집하며, 이미징, 복제, 복사 등을 수행한다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">3단계 · 보관 및 이송</td>
+        <td className="border-b border-border px-4 py-3">연계 보관성 원칙을 만족시키며 증거물을 포장, 이송, 보관한다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">4단계 · 조사 및 분석</td>
+        <td className="border-b border-border px-4 py-3">수집된 증거를 조사하고 분석한다.</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">5단계 · 보고서 작성</td>
+        <td className="px-4 py-3">분석 결과를 정리해 법정 제출용 보고서를 작성한다.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+증거 수집 단계에서 특히 중요한 문장은 이것이다.
+
+```text
+증거 수집은 휘발성이 높은 것부터 진행한다.
+```
+
+메모리, 네트워크 연결, 실행 중인 프로세스, 로그인 세션처럼 시스템을 끄거나 시간이 지나면 사라질 수 있는 정보는 먼저 확보해야 한다.
+
+## 안티 포렌식
+
+**안티 포렌식**은 디지털 데이터를 조작, 삭제, 난독화하여 디지털 포렌식을 방해하는 행위다.
+
+시험에서는 특히 **와이핑**과 **디가우징**의 차이를 정확히 구분해야 한다.
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[720px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-44 border-b border-border px-4 py-3 font-semibold">유형</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">설명</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">데이터 은폐</td>
+        <td className="border-b border-border px-4 py-3">데이터 암호화, 스테가노그래피 등을 사용해 증거를 숨기는 방식이다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">디스크 와이핑</td>
+        <td className="border-b border-border px-4 py-3">디스크 데이터를 0, 1 또는 랜덤값으로 반복 덮어씌워 복구가 어렵거나 불가능하게 만드는 기법이다.</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">디스크 디가우징</td>
+        <td className="px-4 py-3">디가우저 전용 장비로 디스크의 자성을 제거하는 방식이다.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+짧게 외우면 다음과 같다.
+
+```text
+와이핑 = 덮어쓰기
+디가우징 = 자성 제거
+```
+
+## 휘발성 데이터 수집: 윈도우 명령어
+
+휘발성 데이터는 시간이 지나거나 시스템이 종료되면 사라질 수 있는 데이터다.  
+윈도우 환경에서는 시스템 정보, 네트워크 정보, 공유와 세션 정보, 프로세스 정보를 빠르게 확인할 수 있어야 한다.
+
+## 시스템 기본 정보
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[640px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-56 border-b border-border px-4 py-3 font-semibold">명령어</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">설명</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3"><code>date /t</code> &amp; <code>time /t</code></td>
+        <td className="border-b border-border px-4 py-3">시스템 날짜와 시간</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3"><code>hostname</code></td>
+        <td className="border-b border-border px-4 py-3">대상 시스템 호스트 이름</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3"><code>whoami</code></td>
+        <td className="border-b border-border px-4 py-3">현재 사용자 정보</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3"><code>ver</code></td>
+        <td className="border-b border-border px-4 py-3">운영체제 버전</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3"><code>systeminfo</code></td>
+        <td className="px-4 py-3">컴퓨터명, OS 세부정보, CPU, 가동 시간 등</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+## 네트워크 정보
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[720px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-56 border-b border-border px-4 py-3 font-semibold">명령어</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">설명</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3"><code>ipconfig /all</code></td>
+        <td className="border-b border-border px-4 py-3">네트워크 구성 정보</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3"><code>netstat -anob</code></td>
+        <td className="border-b border-border px-4 py-3">열린 포트와 연결된 포트 정보. <code>o</code>는 PID, <code>b</code>는 실행파일명을 의미한다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3"><code>ipconfig /displaydns</code></td>
+        <td className="border-b border-border px-4 py-3">DNS 캐시 정보</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3"><code>arp -a</code></td>
+        <td className="border-b border-border px-4 py-3">ARP 캐시 정보</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3"><code>netstat -rn</code> 또는 <code>route print</code></td>
+        <td className="px-4 py-3">라우팅 테이블 정보</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+## 네트워크 공유와 세션 정보
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[680px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-44 border-b border-border px-4 py-3 font-semibold">명령어</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">설명</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3"><code>net use</code></td>
+        <td className="border-b border-border px-4 py-3">현재 연결된 원격 공유 자원 목록</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3"><code>net share</code></td>
+        <td className="border-b border-border px-4 py-3">현재 자신의 공유 자원 목록</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3"><code>net session</code></td>
+        <td className="px-4 py-3">현재 대상 시스템에 연결된 모든 세션 정보</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+## 프로세스 정보
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[560px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-44 border-b border-border px-4 py-3 font-semibold">명령어</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">설명</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3"><code>tasklist</code></td>
+        <td className="border-b border-border px-4 py-3">동작 중인 프로세스 목록. 리눅스 <code>ps</code>와 유사하다.</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3"><code>tasklist /v</code></td>
+        <td className="px-4 py-3">프로세스 상세 정보</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+## 출제 포인트 정리
+
+마지막으로 시험 직전에 볼 내용만 압축하면 다음과 같다.
+
+```text
+디지털 포렌식
+  -> 법적으로 유효한 증거를 디지털기기로부터 수집, 분석, 보관, 제출
+
+로카르드의 교환법칙
+  -> 범죄자는 흔적을 남기고 무언가를 가지고 떠난다
+
+기본원칙 5가지
+  -> 정당성, 재현성, 무결성, 신속성, 연계 보관성
+  -> 정 · 재 · 무 · 신 · 연
+
+연계 보관성
+  -> 수집 -> 이송 -> 보관 -> 분석 -> 법정 제출
+
+증거 수집
+  -> 휘발성이 높은 것부터 수집
+
+안티 포렌식
+  -> 데이터 은폐, 디스크 와이핑, 디스크 디가우징
+  -> 와이핑은 덮어쓰기
+  -> 디가우징은 자성 제거
+
+netstat -anob
+  -> o = PID
+  -> b = 실행파일명
+```
+
+디지털 포렌식 문제는 긴 설명보다 키워드 대응이 중요하다.  
+**정 · 재 · 무 · 신 · 연**, **수집 → 이송 → 보관 → 분석 → 법정 제출**, **휘발성 높은 것부터**, **와이핑은 덮어쓰기, 디가우징은 자성 제거**만 정확히 잡아도 대부분의 선택지는 빠르게 걸러낼 수 있다.

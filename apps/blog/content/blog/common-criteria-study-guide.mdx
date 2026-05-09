@@ -1,0 +1,266 @@
+---
+title: "공통평가기준 CC 정리: TOE, PP, ST, EAL 한 번에 암기하기"
+date: "2026-05-08"
+category: "정보보안기사"
+subcategory: "정보보안일반"
+excerpt: "정보보안기사 시험에 자주 나오는 공통평가기준 CC의 정의와 TOE, PP, ST, EAL 구성요소를 PP와 ST의 차이까지 묶어서 정리한다."
+tags: ["정보보안기사", "CC", "공통평가기준", "보안인증", "EAL"]
+---
+
+정보보안기사에서 **CC(Common Criteria)** 는 보안 인증 파트의 대표적인 암기 주제다.  
+문제는 보통 길게 묻기보다, 약어의 의미와 PP와 ST의 차이, EAL의 성격을 빠르게 구분할 수 있는지를 확인한다.
+
+이번 글에서는 CC의 정의부터 TOE, PP, ST, EAL 네 가지 구성요소까지 시험에 필요한 범위로 정리한다.
+
+## CC란 무엇인가
+
+**CC(Common Criteria, 공통평가기준)** 는 정보시스템이나 IT 제품의 **보안성을 평가하기 위한 기준을 정의한 국제 표준**이다.
+
+기존의 보안 평가 기준이었던 미국의 **TCSEC** 와 유럽의 **ITSEC** 를 통합해 국제 표준으로 승인된, 현재 가장 대표적인 보안 인증 기준으로 보면 된다.
+
+시험에서는 다음 문장을 먼저 잡아두면 좋다.
+
+```text
+CC = IT 제품의 보안성을 평가하기 위한 국제 표준
+   = TCSEC + ITSEC 통합
+```
+
+CC는 제품이 어떤 보안 기능을 제공해야 하는지, 그 기능을 얼마나 신뢰할 수 있게 개발하고 검증했는지를 평가할 수 있도록 다음 요소를 정의한다.
+
+- 보안 기능 컴포넌트
+- 보증 컴포넌트
+- 제품 사용 환경과 목적에 맞는 평가보증등급
+
+## CC 인증 구성요소 4가지
+
+CC를 공부할 때 가장 먼저 외울 것은 네 가지 약어다.
+
+```text
+TOE, PP, ST, EAL
+```
+
+각각의 의미는 다음과 같다.
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[720px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-24 border-b border-border px-4 py-3 font-semibold">약어</th>
+        <th className="w-56 border-b border-border px-4 py-3 font-semibold">풀네임</th>
+        <th className="w-40 border-b border-border px-4 py-3 font-semibold">한글명</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">핵심 의미</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">TOE</td>
+        <td className="border-b border-border px-4 py-3">Target of Evaluation</td>
+        <td className="border-b border-border px-4 py-3">평가 대상</td>
+        <td className="border-b border-border px-4 py-3">보안성 평가 범위가 되는 대상</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">PP</td>
+        <td className="border-b border-border px-4 py-3">Protection Profile</td>
+        <td className="border-b border-border px-4 py-3">보호 프로파일</td>
+        <td className="border-b border-border px-4 py-3">TOE 유형별 공통 보안 요구사항</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">ST</td>
+        <td className="border-b border-border px-4 py-3">Security Target</td>
+        <td className="border-b border-border px-4 py-3">보안목표 명세서</td>
+        <td className="border-b border-border px-4 py-3">특정 TOE의 세부 보안 요구사항과 구현 내용</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">EAL</td>
+        <td className="px-4 py-3">Evaluation Assurance Level</td>
+        <td className="px-4 py-3">평가보증등급</td>
+        <td className="px-4 py-3">TOE의 보증 수준을 판단하는 등급</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+## TOE: 평가 대상
+
+**TOE(Target of Evaluation)** 는 평가 대상이라는 뜻이다.  
+즉, 보안성 평가를 받을 정보시스템이나 IT 제품의 범위를 말한다.
+
+예를 들어 방화벽 제품을 평가한다면 평가 범위로 잡힌 방화벽 제품 또는 그 제품의 특정 보안 기능 범위가 TOE가 된다.
+
+시험에서는 TOE를 어렵게 해석하기보다 다음처럼 기억하면 충분하다.
+
+```text
+TOE = 평가받는 대상
+```
+
+## PP: 보호 프로파일
+
+**PP(Protection Profile)** 는 보호 프로파일이다.  
+TOE의 **유형별 보안 기능 요구사항**을 기술한 문서다.
+
+여기서 중요한 표현은 **유형별**이다. PP는 특정 회사의 특정 제품을 기준으로 작성하는 문서가 아니라, 같은 유형의 제품이 공통으로 만족해야 할 보안 요구사항을 정의한다.
+
+예를 들어 방화벽 제품군, 침입방지시스템 제품군, 스마트카드 제품군처럼 제품 유형을 기준으로 요구사항을 정리하는 방식이다.
+
+```text
+PP = 제품 유형별 공통 요구사항
+   = 특정 제품 구현과 독립적
+```
+
+## ST: 보안목표 명세서
+
+**ST(Security Target)** 는 보안목표 명세서다.  
+평가 대상인 TOE의 **세부 보안 기능 요구사항과 구현 내용**을 기술한 문서다.
+
+PP가 제품 유형별 공통 요구사항이라면, ST는 실제 평가받는 특정 제품을 기준으로 작성된다.  
+그래서 ST는 평가의 근거로 사용되며, 제품별 세부 평가기준의 성격을 가진다.
+
+```text
+ST = 특정 제품의 세부 보안 요구사항과 구현 내용
+   = 특정 제품 구현에 종속적
+```
+
+## PP와 ST 비교
+
+PP와 ST의 차이는 정보보안기사에서 자주 출제된다.  
+특히 **PP는 독립적**, **ST는 종속적**이라는 구분을 놓치지 않아야 한다.
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[720px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-36 border-b border-border px-4 py-3 font-semibold">구분</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">PP</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">ST</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">한글명</td>
+        <td className="border-b border-border px-4 py-3">보호 프로파일</td>
+        <td className="border-b border-border px-4 py-3">보안목표 명세서</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">기준</td>
+        <td className="border-b border-border px-4 py-3">TOE 유형별</td>
+        <td className="border-b border-border px-4 py-3">특정 TOE 또는 특정 제품별</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">제품 종속성</td>
+        <td className="border-b border-border px-4 py-3">특정 제품 구현과 독립적</td>
+        <td className="border-b border-border px-4 py-3">특정 제품 구현에 종속적</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">성격</td>
+        <td className="border-b border-border px-4 py-3">공통 보안 요구사항</td>
+        <td className="border-b border-border px-4 py-3">세부 평가기준</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">시험 키워드</td>
+        <td className="px-4 py-3">유형별, 독립적</td>
+        <td className="px-4 py-3">제품별, 종속적, 구현 내용</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+짧게 외우면 다음과 같다.
+
+```text
+PP = 유형별 공통 요구사항
+ST = 제품별 세부 평가기준
+```
+
+## EAL: 평가보증등급
+
+**EAL(Evaluation Assurance Level)** 은 평가보증등급이다.  
+TOE가 어느 수준의 보증을 만족하는지 판단하기 위한 등급이다.
+
+EAL은 **EAL1부터 EAL7까지** 존재한다.
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[360px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-32 border-b border-border px-4 py-3 font-semibold">등급</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">수준</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">EAL1</td>
+        <td className="border-b border-border px-4 py-3">최저 등급</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">EAL7</td>
+        <td className="px-4 py-3">최고 등급</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+여기서 자주 헷갈리는 점이 있다.  
+EAL은 인증기관이 제품을 보고 마음대로 등급을 매기는 방식이 아니다.
+
+제조사나 개발자가 필요한 EAL 등급을 요청하면, 인증기관은 해당 등급의 요건을 충족하는지 평가한다.
+
+```text
+제조사 또는 개발자가 필요한 EAL 등급 요청
+  -> 인증기관이 해당 등급 요건 충족 여부 평가
+```
+
+따라서 시험에서는 다음 두 문장을 함께 기억해야 한다.
+
+```text
+EAL = TOE의 보증 수준을 판단하는 등급
+EAL 범위 = EAL1 최저, EAL7 최고
+```
+
+## 출제 포인트 정리
+
+CC 문제는 개념 자체보다 약어와 관계를 정확히 묻는 경우가 많다.  
+시험 직전에는 아래 항목만 빠르게 반복해도 효과가 좋다.
+
+```text
+CC
+  -> IT 제품의 보안성을 평가하기 위한 국제 표준
+  -> TCSEC + ITSEC 통합
+
+TOE
+  -> Target of Evaluation
+  -> 평가 대상
+
+PP
+  -> Protection Profile
+  -> 보호 프로파일
+  -> TOE 유형별 보안 요구사항
+  -> 특정 제품 구현과 독립적
+
+ST
+  -> Security Target
+  -> 보안목표 명세서
+  -> 특정 TOE의 세부 보안 요구사항과 구현 내용
+  -> 특정 제품 구현에 종속적
+
+EAL
+  -> Evaluation Assurance Level
+  -> 평가보증등급
+  -> EAL1 최저, EAL7 최고
+  -> 제조사 또는 개발자가 등급 요청
+  -> 인증기관이 요건 충족 여부 평가
+```
+
+## 한 줄 암기
+
+마지막으로 가장 짧게 압축하면 이렇게 정리할 수 있다.
+
+```text
+CC는 TCSEC와 ITSEC를 통합한 보안성 평가 국제 표준이고,
+TOE는 평가 대상,
+PP는 유형별 독립 요구사항,
+ST는 제품별 종속 평가기준,
+EAL은 EAL1부터 EAL7까지의 평가보증등급이다.
+```
+
+PP와 ST만 구분해도 CC 문제의 절반 이상은 풀기 쉬워진다.  
+문제에서 **유형별**, **공통 요구사항**, **독립적**이라는 말이 보이면 PP를 먼저 떠올리고, **특정 제품**, **구현 내용**, **세부 평가기준**, **종속적**이라는 말이 보이면 ST를 먼저 떠올리면 된다.
