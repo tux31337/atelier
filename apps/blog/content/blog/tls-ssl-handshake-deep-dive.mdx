@@ -1,0 +1,358 @@
+---
+title: "TLS/SSL 완전 정복: 핸드셰이크부터 인증서 체인까지"
+date: "2026-05-11"
+category: "정보보안기사"
+subcategory: "암호화"
+excerpt: "HTTPS의 뼈대인 TLS/SSL의 동작 원리를 처음부터 끝까지 정리한다. 대칭키·비대칭키 하이브리드 암호화, PKI와 인증서 체인, TLS 1.2와 1.3 핸드셰이크 흐름, 암호 스위트까지 시험과 실무에 필요한 범위를 다룬다."
+tags: ["정보보안기사", "TLS", "SSL", "HTTPS", "암호화", "PKI", "핸드셰이크"]
+---
+
+네트워크로 데이터를 주고받을 때 가장 먼저 해결해야 하는 문제는 세 가지다.
+
+**내용이 도중에 누군가에게 읽혔는가?(기밀성)**, **내용이 도중에 바뀌었는가?(무결성)**, **상대가 진짜 내가 의도한 서버인가?(인증성)**
+
+TLS는 이 세 가지를 한꺼번에 처리하는 프로토콜이다. HTTPS는 HTTP 위에 TLS를 얹은 것이고, 오늘날 웹에서 주고받는 거의 모든 데이터는 TLS 위를 지난다.
+
+## SSL과 TLS의 역사
+
+현장에서는 SSL과 TLS를 혼용하지만 실제로는 다른 버전이다.
+
+```text
+Netscape가 개발 (1995)
+  -> SSL 2.0  (취약점 다수, 실제로 거의 사용 안 됨)
+  -> SSL 3.0  (POODLE 공격으로 폐기, RFC 7568)
+
+IETF가 인수 후 TLS로 개명
+  -> TLS 1.0  (1999, SSL 3.0 기반, RC4 취약점)
+  -> TLS 1.1  (2006, 일부 보완)
+  -> TLS 1.2  (2008, 현재도 광범위하게 사용)
+  -> TLS 1.3  (2018, 대폭 개선, 현재 권장 버전)
+```
+
+현재 **TLS 1.0과 1.1은 RFC 8996으로 공식 폐기**되었다. 시험에서는 "SSL은 폐기됐다", "TLS 1.2 이상을 사용해야 한다"는 맥락이 자주 나온다.
+
+## TLS가 보장하는 세 가지
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[680px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-36 border-b border-border px-4 py-3 font-semibold">보안 목표</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">TLS에서의 의미</th>
+        <th className="w-56 border-b border-border px-4 py-3 font-semibold">사용 기술</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">기밀성</td>
+        <td className="border-b border-border px-4 py-3">전송 데이터를 제3자가 읽지 못하도록 암호화한다.</td>
+        <td className="border-b border-border px-4 py-3">대칭키 암호화 (AES-GCM 등)</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">무결성</td>
+        <td className="border-b border-border px-4 py-3">전송 도중 데이터가 변조되지 않았음을 보장한다.</td>
+        <td className="border-b border-border px-4 py-3">MAC, AEAD (인증 암호화)</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">인증성</td>
+        <td className="px-4 py-3">연결 상대가 주장하는 서버가 맞는지 확인한다.</td>
+        <td className="px-4 py-3">공개키 인증서, CA 서명 검증</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+## 대칭키와 비대칭키 하이브리드 암호화
+
+TLS가 기밀성을 달성하는 방식은 두 암호화를 조합하는 **하이브리드 암호화**다.
+
+```text
+비대칭키 암호화 (공개키 암호화)
+  -> 느리다. 큰 데이터에 부적합하다.
+  -> 공개키로 암호화, 개인키로 복호화한다.
+  -> 핵심 용도: 대칭 세션 키를 안전하게 교환하는 것.
+
+대칭키 암호화
+  -> 빠르다. 대용량 데이터에 적합하다.
+  -> 같은 키로 암호화·복호화한다.
+  -> 핵심 용도: 실제 데이터를 암호화하는 것.
+```
+
+비대칭키로 대칭 세션 키를 안전하게 공유하고, 이후 모든 실제 데이터는 대칭 세션 키로 암호화한다.
+
+```text
+[키 교환 단계]  비대칭키 암호화로 세션 키(대칭키)를 안전하게 합의
+[데이터 전송]   합의된 세션 키(대칭키)로 실제 데이터를 암호화
+```
+
+## 공개키 기반 구조(PKI)와 인증서
+
+비대칭키 암호화를 사용할 때 반드시 해결해야 하는 문제가 있다. **"이 공개키가 진짜 그 서버의 것인가?"**
+
+아무 서버나 자기 공개키를 보내면서 "저는 example.com입니다"라고 주장할 수 있다. 이를 사전에 막지 않으면 중간자(MITM)가 공격할 수 있다. PKI는 이 문제를 "신뢰할 수 있는 제3자(CA)가 공개키를 보증한다"는 방식으로 해결한다.
+
+### X.509 인증서 구조
+
+인증서는 서버의 공개키와 신원 정보를 묶고, CA가 그 전체에 서명한 문서다.
+
+<TLSCertificateDiagram />
+
+인증서에서 가장 중요한 항목은 두 가지다.
+
+**공개키**: 서버가 보유한 개인키와 쌍을 이루는 키. 핸드셰이크에서 키 교환에 사용된다.
+
+**서명(Signature)**: CA의 개인키로 인증서 내용 전체의 해시를 암호화한 값이다. 클라이언트는 CA의 공개키로 이 서명을 검증해 인증서가 변조되지 않았음을 확인한다.
+
+### 서명 검증의 원리
+
+서명이 어떻게 위조를 방지하는지 단계로 풀면 다음과 같다.
+
+```text
+[CA가 인증서를 발급할 때]
+  인증서 내용 전체를 해시 함수에 넣는다.
+    -> 해시값 H 생성
+  CA가 자신의 개인키로 H를 암호화한다.
+    -> 이것이 서명(Signature)
+  인증서 = 내용 + 서명
+
+[브라우저가 인증서를 검증할 때]
+  CA의 공개키로 서명을 복호화한다.
+    -> 원본 해시값 H를 얻는다.
+  인증서 내용을 같은 해시 함수에 넣는다.
+    -> 새로운 해시값 H' 생성
+  H == H' 이면 검증 성공 (내용이 바뀌지 않았다)
+  H != H' 이면 변조 감지
+```
+
+인증서 내용이 조금이라도 바뀌면 해시값이 완전히 달라진다. 공격자가 인증서를 위조하려면 CA의 개인키가 있어야 서명을 다시 만들 수 있는데, 그것을 얻는 것이 사실상 불가능하다.
+
+### 인증서 체인: Root CA부터 서버까지
+
+CA도 계층 구조를 갖는다. Root CA가 직접 모든 서버 인증서를 발급하지 않고, Intermediate CA를 통해 위임한다.
+
+<PKITrustChainDiagram />
+
+신뢰의 기준은 **Root CA가 브라우저나 운영체제의 신뢰 저장소에 내장되어 있다는 사실**이다. 우리가 인터넷 뱅킹 사이트를 처음 방문해도 경고가 나오지 않는 이유는, 해당 사이트 인증서의 체인이 결국 OS나 브라우저가 이미 신뢰한 Root CA까지 연결되기 때문이다.
+
+### 브라우저가 인증서를 검증하는 순서
+
+<PKIVerificationDiagram />
+
+## TLS 1.2 핸드셰이크
+
+이론적 배경이 갖춰졌으니 실제 연결이 어떻게 이루어지는지 본다. 핸드셰이크는 세션 키를 협의하고 상대방을 인증하는 과정이다.
+
+<TLSHandshake12Diagram />
+
+### Pre-Master Secret에서 세션 키 도출
+
+ClientKeyExchange로 전달된 Pre-Master Secret은 그 자체로 세션 키가 되지 않는다. Client Random과 Server Random을 함께 섞어 최종 세션 키를 파생한다.
+
+```text
+Pre-Master Secret + Client Random + Server Random
+    |
+    v
+  PRF(의사 난수 함수) 적용
+    |
+    v
+  Master Secret (48바이트)
+    |
+    v
+  [키 확장]
+    |
+    +-- Client Write Key  (클라이언트 -> 서버 암호화 키)
+    +-- Server Write Key  (서버 -> 클라이언트 암호화 키)
+    +-- Client Write MAC  (클라이언트 측 무결성 키)
+    +-- Server Write MAC  (서버 측 무결성 키)
+```
+
+Client Random과 Server Random을 함께 섞는 이유는 **재전송 공격(Replay Attack)** 방지다. 매 연결마다 새로운 난수를 섞으면, 같은 Pre-Master Secret이 재사용되더라도 세션 키가 달라진다.
+
+## TLS 1.3 핸드셰이크
+
+TLS 1.3은 불필요한 단계를 제거하고, 취약한 알고리즘을 전부 없애고, RTT를 1로 줄였다.
+
+<TLSHandshake13Diagram />
+
+### TLS 1.2 대비 TLS 1.3의 주요 변화
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[760px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-48 border-b border-border px-4 py-3 font-semibold">항목</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">TLS 1.2</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">TLS 1.3</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">핸드셰이크 왕복</td>
+        <td className="border-b border-border px-4 py-3">2-RTT</td>
+        <td className="border-b border-border px-4 py-3">1-RTT (0-RTT 옵션)</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">키 교환 방식</td>
+        <td className="border-b border-border px-4 py-3">RSA, DH, ECDH, DHE, ECDHE</td>
+        <td className="border-b border-border px-4 py-3">ECDHE, DHE만 허용 (PFS 강제)</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">서버 인증서 전송</td>
+        <td className="border-b border-border px-4 py-3">평문으로 전송</td>
+        <td className="border-b border-border px-4 py-3">암호화된 상태로 전송</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">폐기된 기능</td>
+        <td className="border-b border-border px-4 py-3">재협상, 압축, 정적 RSA 키 교환</td>
+        <td className="border-b border-border px-4 py-3">모두 제거됨</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">지원 암호화</td>
+        <td className="px-4 py-3">RC4, 3DES, CBC 모드 허용</td>
+        <td className="px-4 py-3">AEAD만 허용 (AES-GCM, ChaCha20-Poly1305)</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+### 순방향 비밀성(Perfect Forward Secrecy, PFS)
+
+TLS 1.3에서 강제하는 ECDHE/DHE 키 교환의 핵심 특성이다.
+
+```text
+정적 RSA 키 교환 (TLS 1.2 이하 옵션, PFS 없음)
+  -> 서버 개인키 하나로 Pre-Master Secret을 복호화할 수 있다.
+  -> 나중에 개인키가 유출되면 과거에 녹화해둔 트래픽까지 해독된다.
+
+DHE/ECDHE 키 교환 (PFS 있음)
+  -> 매 세션마다 임시(ephemeral) 키 쌍을 새로 생성한다.
+  -> 세션이 끝나면 임시 키를 폐기한다.
+  -> 나중에 서버 개인키가 유출돼도 과거 세션은 복호화되지 않는다.
+```
+
+"순방향 비밀성"이라는 이름이 붙은 이유가 여기 있다. 오늘의 타협이 어제의 통신을 드러내지 않는다.
+
+## 암호 스위트(Cipher Suite)
+
+암호 스위트는 핸드셰이크에서 협의하는 알고리즘 조합이다. TLS 1.2까지는 한 문자열에 네 가지를 명시했다.
+
+```text
+TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+  |      |     |        |         |
+  |      |     |        |         +-- 무결성 검증 해시 알고리즘
+  |      |     |        +------------ 암호화 알고리즘 + 모드 + 키 길이
+  |      |     +---------------------  인증서 서명 알고리즘 (서버 인증)
+  |      +--------------------------  키 교환 알고리즘
+  +--------------------------------  프로토콜
+```
+
+TLS 1.3에서는 키 교환(ECDHE 고정)과 인증(인증서 고정)이 분리되어 암호 스위트가 단순해졌다.
+
+```text
+TLS 1.3 Cipher Suite 예시
+  -> TLS_AES_256_GCM_SHA384
+  -> TLS_CHACHA20_POLY1305_SHA256
+  -> TLS_AES_128_GCM_SHA256
+```
+
+## HTTPS와 TLS의 관계
+
+```text
+HTTPS = HTTP + TLS
+
+연결 수립 흐름
+  1. TCP 3-way handshake  (SYN / SYN-ACK / ACK)
+  2. TLS 핸드셰이크       (세션 키 협의, 인증서 검증)
+  3. HTTP 요청/응답       (TLS로 암호화됨)
+```
+
+포트는 HTTP가 80번, HTTPS가 443번이다. TLS는 HTTP뿐 아니라 SMTP, IMAP 등 다른 응용 프로토콜에도 얹힐 수 있다.
+
+### HSTS(HTTP Strict Transport Security)
+
+HSTS는 브라우저가 특정 도메인에 대해 항상 HTTPS만 사용하도록 강제하는 정책이다.
+
+```text
+Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+```
+
+서버가 이 헤더를 보내면 브라우저는 `max-age` 기간 동안 해당 도메인에 HTTP로 접근을 시도해도 자동으로 HTTPS로 업그레이드한다. **SSL Stripping 공격을 방어하는 핵심 수단**이다.
+
+## 대표적인 TLS 관련 공격과 대응
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[760px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-44 border-b border-border px-4 py-3 font-semibold">공격명</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">원리</th>
+        <th className="w-52 border-b border-border px-4 py-3 font-semibold">대응</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">POODLE</td>
+        <td className="border-b border-border px-4 py-3">SSL 3.0 CBC 패딩 오라클로 암호문을 해독한다.</td>
+        <td className="border-b border-border px-4 py-3">SSL 3.0 비활성화</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">BEAST</td>
+        <td className="border-b border-border px-4 py-3">TLS 1.0 CBC 모드 IV 예측 취약점으로 쿠키를 탈취한다.</td>
+        <td className="border-b border-border px-4 py-3">TLS 1.1 이상 사용</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">HEARTBLEED</td>
+        <td className="border-b border-border px-4 py-3">OpenSSL heartbeat 확장의 버퍼 오버리드로 서버 메모리를 노출한다.</td>
+        <td className="border-b border-border px-4 py-3">OpenSSL 1.0.1g 이상 패치</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">SSL Stripping</td>
+        <td className="border-b border-border px-4 py-3">중간자가 HTTPS를 HTTP로 다운그레이드해 평문을 가로챈다.</td>
+        <td className="border-b border-border px-4 py-3">HSTS 적용</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">버전 다운그레이드</td>
+        <td className="px-4 py-3">중간자가 협상을 조작해 취약한 TLS 버전으로 유도한다.</td>
+        <td className="px-4 py-3">TLS 1.2 이상 강제, TLS_FALLBACK_SCSV</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+## 출제 포인트 정리
+
+```text
+SSL vs TLS
+  -> SSL은 공식 폐기됨 (RFC 7568, RFC 8996)
+  -> 현재 권장 버전은 TLS 1.3, 최소 TLS 1.2
+
+핸드셰이크 왕복 횟수
+  -> TLS 1.2: 2-RTT
+  -> TLS 1.3: 1-RTT (0-RTT 옵션, 재전송 공격 위험 있음)
+
+하이브리드 암호화
+  -> 비대칭키로 대칭 세션 키를 교환
+  -> 이후 데이터는 대칭키로 암호화
+
+PKI와 인증서
+  -> CA가 서버 공개키에 서명해 신뢰를 보증한다.
+  -> 인증서 체인: 서버 -> Intermediate CA -> Root CA
+  -> Root CA는 브라우저/OS 신뢰 저장소에 내장
+
+서명 검증
+  -> CA 공개키로 서명 복호화 -> 해시값 비교
+  -> 내용이 바뀌면 해시가 맞지 않아 위조 탐지
+
+PFS (순방향 비밀성)
+  -> ECDHE/DHE의 임시 키 사용, TLS 1.3에서 강제
+  -> 키 유출 시 과거 세션 보호
+
+HSTS
+  -> SSL Stripping 방어
+  -> max-age 동안 해당 도메인에 HTTPS 강제
+
+주요 공격
+  -> POODLE: SSL 3.0 CBC 패딩 오라클
+  -> HEARTBLEED: OpenSSL 버퍼 오버리드
+  -> SSL Stripping: HSTS로 방어
+```
