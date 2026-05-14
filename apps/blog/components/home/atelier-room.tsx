@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
+import { HOME_SCENE_ASSETS } from "./home-scene-assets";
 
 const CHARACTER_MODEL = "/models/pets/animal-dog.glb";
 const PARK_FOUNTAIN_MODEL = "/models/free-assets/poly-pizza-fountain/fountain.glb";
@@ -164,12 +165,33 @@ function GlbModel({ path, position, rotation = [0, 0, 0], scale = 2 }: GlbProps)
   return <primitive object={clone} position={position} rotation={rotation} scale={scale} />;
 }
 
+function NormalizedGlbModel({ path, position, rotation = [0, 0, 0], scale = 1 }: GlbProps) {
+  const { scene } = useGLTF(path);
+  const { clone, offset } = useMemo(() => {
+    const clone = scene.clone(true);
+    const box = new THREE.Box3().setFromObject(clone);
+    const center = box.getCenter(new THREE.Vector3());
+
+    return {
+      clone,
+      offset: new THREE.Vector3(-center.x, -box.min.y, -center.z),
+    };
+  }, [scene]);
+
+  return (
+    <group position={position} rotation={rotation} scale={scale}>
+      <primitive object={clone} position={[offset.x, offset.y, offset.z]} />
+    </group>
+  );
+}
+
 function VillageLayout() {
   const showModelDistricts = false;
 
   return (
     <group>
       <MetaverseMapBase />
+      <IslandShowcase />
       <SimpleFountainPlaza />
       <SimpleRoadNetwork />
       <HousePlatforms />
@@ -187,6 +209,31 @@ function VillageLayout() {
           <ScatteredRocks />
         </>
       ) : null}
+    </group>
+  );
+}
+
+function IslandShowcase() {
+  const island = HOME_SCENE_ASSETS.island;
+
+  return (
+    <group position={island.position}>
+      <mesh position={[0, 0.08, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[3.6, 56]} />
+        <meshStandardMaterial color="#222f36" roughness={0.72} metalness={0.08} />
+      </mesh>
+      <mesh position={[0, 0.12, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[3.25, 3.6, 56]} />
+        <meshStandardMaterial color="#77e6d2" emissive="#1e9d8f" emissiveIntensity={0.22} roughness={0.42} />
+      </mesh>
+      <Suspense fallback={null}>
+        <NormalizedGlbModel
+          path={island.path}
+          position={[0, 0.16, 0]}
+          rotation={island.rotation}
+          scale={island.scale}
+        />
+      </Suspense>
     </group>
   );
 }
@@ -1283,6 +1330,7 @@ function Character({ moving }: { moving: boolean }) {
 
 useGLTF.preload(CHARACTER_MODEL);
 useGLTF.preload(PARK_FOUNTAIN_MODEL);
+useGLTF.preload(HOME_SCENE_ASSETS.island.path);
 
 function Player({
   worldMode,
