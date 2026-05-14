@@ -1,0 +1,417 @@
+---
+title: "위험관리 정리: DOA와 ROI, 5단계 절차와 위험 구성요소"
+date: "2026-05-14"
+category: "정보보안기사"
+subcategory: "정보보안일반"
+excerpt: "정보보안기사 시험에 자주 나오는 위험관리의 정의, DOA와 ROI, 위험관리 5단계, 위험 구성요소, 보호대책 분류와 잔여 위험을 정리한다."
+tags: ["정보보안기사", "위험관리", "DOA", "ROI", "위험분석", "보호대책"]
+---
+
+위험관리는 정보보안기사에서 **절차 순서**, **DOA의 의미와 결정 주체**, **위험 구성요소**, **정보보호대책 명세서와 이행계획 산출물**이 반복해서 출제되는 주제다.
+특히 위험관리 5단계는 순서를 바꿔 묻기 쉽고, DOA와 잔여 위험은 정의를 정확히 알아야 한다.
+
+이번 글에서는 위험관리의 정의부터 보호대책 분류까지 시험에 필요한 범위로 정리한다.
+
+## 위험관리란 무엇인가
+
+**위험관리**는 조직 자산에 대한 위험을 **수용 가능한 목표 위험수준(DOA)** 으로 유지하기 위해 위험을 분석하고, 비용 대비 효율적인 보호대책을 마련하는 일련의 과정이다.
+
+짧게 정리하면 다음과 같다.
+
+```text
+위험관리
+  -> 조직 자산의 위험을 수용 가능한 목표 위험수준(DOA)으로 유지하는 과정
+  -> 위험을 분석하고 비용 대비 효율적인 보호대책을 마련한다.
+```
+
+여기서 비용 대비 효율적이라는 말은 **ROI(Return on Investment)가 높은 대책**을 선택한다는 뜻이다.
+위험을 무조건 없애는 것이 아니라, 투자 대비 효과가 큰 보호대책을 선택해 목표 위험수준 안으로 낮추는 것이 핵심이다.
+
+## DOA와 ROI
+
+위험관리 정의에서 반드시 기억해야 하는 키워드는 **DOA**와 **ROI**다.
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[760px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-32 border-b border-border px-4 py-3 font-semibold">구분</th>
+        <th className="w-52 border-b border-border px-4 py-3 font-semibold">의미</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">시험 포인트</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">DOA</td>
+        <td className="border-b border-border px-4 py-3">Degree of Assurance</td>
+        <td className="border-b border-border px-4 py-3">조직이 수용할 수 있는 목표 위험수준이다. 경영진의 의사결정으로 정한다.</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">ROI</td>
+        <td className="px-4 py-3">Return on Investment</td>
+        <td className="px-4 py-3">투자 대비 효과다. 위험관리에서는 비용 대비 효율이 높은 보호대책을 의미한다.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+DOA는 기술 담당자가 임의로 정하는 기준이 아니다.
+조직이 어느 수준의 위험을 감수할지 정하는 일이므로 **경영진의 의사결정**이 필요하다.
+시험에서는 정보보호 최고책임자, 개인정보 보호책임자 등 경영진 또는 책임자 수준의 의사결정과 연결해서 묻는다.
+
+## 위험관리 과정 5단계
+
+위험관리 과정은 순서 암기가 가장 중요하다.
+
+```text
+전략 및 계획 수립
+  -> 위험분석
+  -> 위험 평가
+  -> 정보보호 대책 선정
+  -> 정보보호 계획 수립
+```
+
+각 단계의 핵심은 다음과 같다.
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[860px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-24 border-b border-border px-4 py-3 font-semibold">단계</th>
+        <th className="w-56 border-b border-border px-4 py-3 font-semibold">이름</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">핵심 내용</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">1단계</td>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">위험관리 전략 및 계획 수립</td>
+        <td className="border-b border-border px-4 py-3">조직에 적합한 위험관리 방법을 선택하고, 비용 · 시간 · 인력 같은 가용 자원을 고려해 계획을 수립한다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">2단계</td>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">위험분석</td>
+        <td className="border-b border-border px-4 py-3">자산, 위협, 취약점, 기존 보호대책을 분석해 위험의 종류와 규모를 결정한다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">3단계</td>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">위험 평가</td>
+        <td className="border-b border-border px-4 py-3">위험분석 결과를 바탕으로 위험도를 평가하고, DOA를 기준으로 대응 여부와 우선순위를 결정한다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">4단계</td>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">정보보호 대책 선정</td>
+        <td className="border-b border-border px-4 py-3">DOA 초과 위험을 수용 가능 수준으로 낮추기 위한 위험처리 전략과 보호대책을 선정한다.</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">5단계</td>
+        <td className="px-4 py-3 font-semibold text-secondary">정보보호 계획 수립</td>
+        <td className="px-4 py-3">선정한 보호대책을 구현하기 위한 이행계획을 수립한다.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+## 1단계: 위험관리 전략 및 계획 수립
+
+1단계는 위험관리 전체 방향을 잡는 단계다.
+조직에 맞는 위험관리 방법을 선택하고, 실제로 사용할 수 있는 자원을 고려해 계획을 세운다.
+
+```text
+고려 요소
+  -> 비용
+  -> 시간
+  -> 인력
+  -> 조직 특성
+  -> 가용 자원
+```
+
+위험관리 방법이 아무리 정교해도 조직의 예산과 인력으로 수행할 수 없으면 실효성이 없다.
+따라서 1단계의 핵심 표현은 **가용 자원을 고려한 계획 수립**이다.
+
+## 2단계: 위험분석
+
+2단계 위험분석은 위험의 종류와 규모를 결정하는 단계다.
+이때 분석 대상은 네 가지로 정리한다.
+
+```text
+위험분석 대상
+  -> 자산
+  -> 위협
+  -> 취약점
+  -> 기존 보호대책
+```
+
+자산 분석은 다시 세부 순서로 정리할 수 있다.
+
+```text
+자산 분석
+  -> 자산 식별
+  -> 가치 평가
+  -> CIA 기준으로 중요도 산정
+```
+
+CIA는 기밀성, 무결성, 가용성이다.
+어떤 자산이 얼마나 중요한지 판단할 때 단순 금액만 보는 것이 아니라, 해당 자산의 기밀성, 무결성, 가용성이 깨졌을 때 조직에 미치는 영향을 함께 본다.
+
+## 3단계: 위험 평가
+
+3단계 위험 평가는 위험분석 결과를 바탕으로 위험도를 평가하고, **DOA를 기준으로 대응 여부와 우선순위**를 결정하는 단계다.
+
+모든 위험을 제거하는 것은 현실적으로 불가능하다.
+따라서 조직은 DOA를 기준으로 다음처럼 판단한다.
+
+```text
+위험도 <= DOA
+  -> 수용 가능한 위험
+
+위험도 > DOA
+  -> 대응이 필요한 위험
+  -> 보호대책 마련
+```
+
+이 단계에서 자주 나오는 함정은 DOA의 결정 주체다.
+DOA는 보안 담당자가 계산만으로 확정하는 값이 아니라, 조직이 어느 수준의 위험을 받아들일지에 관한 **경영진의 의사결정**으로 정한다.
+
+## 4단계: 정보보호 대책 선정
+
+4단계에서는 위험평가 결과를 바탕으로 필요한 보호대책을 선정한다.
+목표는 DOA를 초과하는 위험을 수용 가능한 수준으로 낮추는 것이다.
+
+이 단계의 산출물은 **정보보호대책 명세서**다.
+
+```text
+정보보호대책 명세서
+  -> 보호대책 선정과정의 산출물
+  -> 대책의 선택 여부와 근거를 명시한 문서
+  -> 선택하지 않은 통제사항은 그 이유를 명확히 기술해야 한다.
+```
+
+시험에서는 "선택한 대책만 적으면 된다"는 식의 문장이 함정으로 나올 수 있다.
+정보보호대책 명세서는 선택한 대책뿐 아니라 **선택하지 않은 통제사항의 미선택 이유**까지 명확히 남겨야 한다.
+그래야 나중에 심사나 감사에서 왜 해당 통제를 제외했는지 설명할 수 있다.
+
+## 5단계: 정보보호 계획 수립
+
+5단계에서는 선정한 보호대책을 실제로 구현하기 위한 계획을 수립한다.
+핵심 산출물은 **이행계획**이다.
+
+```text
+이행계획 포함 내용
+  -> 구현할 보호대책
+  -> 우선순위
+  -> 일정
+  -> 예산
+  -> 책임
+  -> 운영계획
+```
+
+4단계가 "무엇을 선택할 것인가"를 정하는 단계라면, 5단계는 "언제, 누가, 어떤 예산으로 구현하고 운영할 것인가"를 정하는 단계다.
+따라서 산출물을 구분해서 외워야 한다.
+
+```text
+4단계 산출물 -> 정보보호대책 명세서
+5단계 산출물 -> 이행계획
+```
+
+## 위험 구성요소
+
+위험은 자산, 위협, 취약점의 함수로 표현한다.
+
+```text
+위험 = F(A, T, V)
+
+A = Asset = 자산
+T = Threat = 위협
+V = Vulnerability = 취약점
+```
+
+위험 구성요소는 3대 구성과 4대 구성을 구분해서 외운다.
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[720px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-44 border-b border-border px-4 py-3 font-semibold">구분</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">구성요소</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">위험의 3대 구성</td>
+        <td className="border-b border-border px-4 py-3">자산, 위협, 취약점</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">위험의 4대 구성</td>
+        <td className="px-4 py-3">자산, 위협, 취약점, 보호대책</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+**잔여 위험**은 보호대책을 구현한 뒤에도 남아있는 위험이다.
+보호대책을 적용했다고 해서 위험이 완전히 사라지는 것은 아니므로, 잔여 위험이 DOA 안에 있는지 계속 관리해야 한다.
+
+## 위험 구성요소 용어
+
+각 구성요소의 정의는 다음처럼 구분한다.
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[820px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-32 border-b border-border px-4 py-3 font-semibold">용어</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">정의</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">자산</td>
+        <td className="border-b border-border px-4 py-3">조직이 보호해야 할 유 · 무형의 대상이다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">위협</td>
+        <td className="border-b border-border px-4 py-3">자산에 손실을 초래할 수 있는 원하지 않는 사건의 잠재적 원인 또는 행위자다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">취약점</td>
+        <td className="border-b border-border px-4 py-3">위협의 이용 대상이 되는 자산의 잠재적 속성이다. 기술적 · 관리적 · 물리적 약점을 포함한다.</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">보호대책</td>
+        <td className="px-4 py-3">자산을 위험으로부터 보호하거나 위협을 감소시키기 위한 정보보호 조치다.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+여기서 취약점은 "위협이 발생하면 반드시 손실이 발생한다"는 뜻이 아니다.
+취약점은 위협이 이용할 수 있는 약점이고, 실제 손실은 자산의 가치, 위협의 발생 가능성, 기존 보호대책의 수준에 따라 달라진다.
+
+## 위험 구성요소 간의 관계
+
+위험 구성요소는 다음 흐름으로 이해하면 쉽다.
+
+```text
+위협
+  -> 취약점을 이용한다.
+  -> 자산에 손실을 발생시킬 수 있다.
+
+보호대책
+  -> 위협을 줄인다.
+  -> 취약점을 보완한다.
+  -> 자산을 보호한다.
+
+보호대책 적용 후에도 남는 위험
+  -> 잔여 위험
+```
+
+즉, 위험은 단순히 "위협이 있다"는 사실만으로 결정되지 않는다.
+중요한 자산이 있고, 그 자산에 취약점이 있으며, 해당 취약점을 이용할 위협이 있을 때 위험이 커진다.
+보호대책은 이 관계 중 하나 이상을 줄여 최종 위험수준을 낮춘다.
+
+## 보호대책 분류
+
+보호대책은 유형에 따라 **기술적, 관리적, 물리적 보호대책**으로 나눈다.
+
+```text
+기술적 보호대책
+  -> 시스템, 네트워크, 애플리케이션, 보안 장비 등 기술 수단을 활용한다.
+
+관리적 보호대책
+  -> 정책, 절차, 조직, 교육, 점검처럼 관리 체계를 활용한다.
+
+물리적 보호대책
+  -> 출입통제, 잠금장치, CCTV, 시설 보호처럼 물리 환경을 보호한다.
+```
+
+적용 시점에 따라서는 **예방 통제, 탐지 통제, 교정 통제**로 구분한다.
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[820px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-36 border-b border-border px-4 py-3 font-semibold">구분</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">설명</th>
+        <th className="w-64 border-b border-border px-4 py-3 font-semibold">예시 또는 포인트</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">예방 통제</td>
+        <td className="border-b border-border px-4 py-3">위험이 발생하기 전에 사전 대처하는 능동적 통제다.</td>
+        <td className="border-b border-border px-4 py-3">물리적 접근통제, 논리적 접근통제</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">탐지 통제</td>
+        <td className="border-b border-border px-4 py-3">예방 통제를 우회한 위험을 탐지한다.</td>
+        <td className="border-b border-border px-4 py-3">로그 모니터링, 침입탐지, 보안관제</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">교정 통제</td>
+        <td className="px-4 py-3">탐지된 위험에 대처하고 위험을 감소시킨다.</td>
+        <td className="px-4 py-3">복구, 패치, 재발 방지 조치</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+예방 통제 중 접근통제는 다시 두 가지로 나눌 수 있다.
+
+```text
+물리적 접근통제
+  -> 물리적 시설과 설비 접근을 차단한다.
+
+논리적 접근통제
+  -> 정보통신망을 통한 자산 접근을 차단한다.
+```
+
+## 출제 포인트 정리
+
+시험 직전에는 아래 내용만 빠르게 반복해도 좋다.
+
+```text
+위험관리
+  -> 위험을 수용 가능한 목표 위험수준(DOA)으로 유지하는 과정
+  -> 비용 대비 효율적인 보호대책을 마련한다.
+
+DOA
+  -> Degree of Assurance
+  -> 수용 가능한 목표 위험수준
+  -> 경영진의 의사결정으로 결정
+
+ROI
+  -> Return on Investment
+  -> 비용 대비 효율
+
+위험관리 5단계
+  -> 1. 위험관리 전략 및 계획 수립
+  -> 2. 위험분석
+  -> 3. 위험 평가
+  -> 4. 정보보호 대책 선정
+  -> 5. 정보보호 계획 수립
+
+4단계 산출물
+  -> 정보보호대책 명세서
+  -> 선택 여부와 근거를 명시
+  -> 선택하지 않은 통제사항은 이유를 명확히 기술
+
+5단계 산출물
+  -> 이행계획
+  -> 보호대책, 우선순위, 일정, 예산, 책임, 운영계획 포함
+
+위험 구성요소
+  -> 3대 구성: 자산, 위협, 취약점
+  -> 4대 구성: 자산, 위협, 취약점, 보호대책
+
+잔여 위험
+  -> 보호대책 구현 후 남아있는 위험
+
+보호대책 적용 시점
+  -> 예방 통제
+  -> 탐지 통제
+  -> 교정 통제
+```
+
+위험관리 단원은 큰 흐름보다도 **단계 순서와 산출물 구분**에서 점수가 갈린다.
+특히 4단계의 정보보호대책 명세서와 5단계의 이행계획, DOA의 결정 주체, 잔여 위험의 정의는 따로 떼어 반복해서 외워두는 것이 좋다.
