@@ -13,9 +13,9 @@ const VM_BASE = "/models/GLB%20format";
 const vm = (name: string) => `${VM_BASE}/${name}.glb`;
 
 const PLAYER_SPEED = 6;
-const CAMERA_DISTANCE = 5;
-const CAMERA_BASE_HEIGHT = 1.8;
-const LOOK_AT_HEIGHT = 1.0;
+const CAMERA_DISTANCE = 6.5;
+const CAMERA_BASE_HEIGHT = 2.2;
+const LOOK_AT_HEIGHT = 1.1;
 const PITCH_MIN = -0.3;
 const PITCH_MAX = 1.25;
 const PLAZA_HALF = 40;
@@ -25,6 +25,7 @@ const CAMERA_INSET = 0.2;
 const HOUSE_SCALE = 2.025;
 const WIDE_HOUSE_SCALE = 1.98;
 const VILLAGE_SPAWN = new THREE.Vector3(-8, 0, 31);
+const ISLAND_SPAWN = new THREE.Vector3(0, 0.62, 8);
 const VILLAGE_PORTAL = new THREE.Vector3(-9.25, 0, 24.2);
 const HOUSE_PORTALS = [
   new THREE.Vector3(-20.4, 0, -23.8),
@@ -80,6 +81,126 @@ const CAMERA_BOUNDS = {
   maxZ: PLAZA_HALF - CAMERA_INSET,
 };
 
+type WorldMode = "island" | "village" | "interior";
+
+type IslandNode = {
+  id: string;
+  center: [number, number];
+  radius: number;
+  sandRadius: number;
+  grass: string;
+  patch: string;
+  patchOffset: [number, number];
+  patchRadius: number;
+  rockOffset: [number, number];
+  cliffDepth: number;
+  accent: "atelier" | "farm" | "tower" | "beach" | "snow" | "cottage";
+  modelScale: number;
+  rotation: number;
+};
+
+const ISLANDS: IslandNode[] = [
+  {
+    id: "home",
+    center: [0, 8],
+    radius: 7.8,
+    sandRadius: 9.2,
+    grass: "#477b3f",
+    patch: "#5c954d",
+    patchOffset: [-1.8, 1.2],
+    patchRadius: 4.4,
+    rockOffset: [-3.4, -2.4],
+    cliffDepth: 7.2,
+    accent: "cottage",
+    modelScale: 0.0043,
+    rotation: 0.2,
+  },
+  {
+    id: "castle",
+    center: [0, -18],
+    radius: 8.8,
+    sandRadius: 10.2,
+    grass: "#526f40",
+    patch: "#6f9051",
+    patchOffset: [1.4, 0.9],
+    patchRadius: 4.1,
+    rockOffset: [-3.4, 2.1],
+    cliffDepth: 9.4,
+    accent: "atelier",
+    modelScale: 0.005,
+    rotation: -0.45,
+  },
+  {
+    id: "farm",
+    center: [-22, -12],
+    radius: 6.6,
+    sandRadius: 7.9,
+    grass: "#657f38",
+    patch: "#9a8a33",
+    patchOffset: [-1.1, 0.6],
+    patchRadius: 2.7,
+    rockOffset: [2.4, -2.0],
+    cliffDepth: 7.8,
+    accent: "farm",
+    modelScale: 0.0038,
+    rotation: 0.7,
+  },
+  {
+    id: "tower",
+    center: [22, -12],
+    radius: 6.8,
+    sandRadius: 8.1,
+    grass: "#426d55",
+    patch: "#6e9f7f",
+    patchOffset: [1.2, 1.0],
+    patchRadius: 3.1,
+    rockOffset: [-2.8, -1.6],
+    cliffDepth: 8.4,
+    accent: "tower",
+    modelScale: 0.0039,
+    rotation: -0.25,
+  },
+  {
+    id: "beach",
+    center: [-18, 20],
+    radius: 6.7,
+    sandRadius: 8.8,
+    grass: "#5e8b47",
+    patch: "#d6c07c",
+    patchOffset: [-0.6, 0.4],
+    patchRadius: 4.8,
+    rockOffset: [2.6, -2.2],
+    cliffDepth: 8.8,
+    accent: "beach",
+    modelScale: 0.004,
+    rotation: 0.55,
+  },
+  {
+    id: "snow",
+    center: [18, 20],
+    radius: 6.9,
+    sandRadius: 8.0,
+    grass: "#8fa089",
+    patch: "#eef2f4",
+    patchOffset: [-0.7, 0.5],
+    patchRadius: 4.9,
+    rockOffset: [-2.6, -2.0],
+    cliffDepth: 8.8,
+    accent: "snow",
+    modelScale: 0.004,
+    rotation: -0.7,
+  },
+];
+
+const BRIDGES: Array<{ from: string; to: string; width: number }> = [
+  { from: "home", to: "castle", width: 2.4 },
+  { from: "castle", to: "farm", width: 2.2 },
+  { from: "castle", to: "tower", width: 2.2 },
+  { from: "home", to: "beach", width: 2.2 },
+  { from: "home", to: "snow", width: 2.2 },
+  { from: "beach", to: "snow", width: 2.0 },
+];
+
 export function AtelierRoom() {
   return (
     <section
@@ -99,12 +220,12 @@ export function AtelierRoom() {
       </div>
 
       <div className="pointer-events-none absolute left-6 top-5 z-10 max-w-sm rounded-md border border-stone-600/60 bg-[#11100f]/82 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.45)]">
-        <p className="font-code-label text-code-label text-amber-200">Atelier Village</p>
+        <p className="font-code-label text-code-label text-amber-200">Atelier Island</p>
         <h1 id="atelier-room-title" className="mt-2 font-headline-lg text-2xl text-stone-50">
-          오픈월드 마을
+          연결된 섬 작업실
         </h1>
         <p className="mt-2 font-body-md text-sm text-stone-300">
-          WASD 이동 / 마우스 드래그로 시점 회전 · 사방 라우트 기둥으로 이동
+          WASD 이동 / 마우스 드래그로 시점 회전 · 다리를 따라 다른 섬으로 이동
         </p>
       </div>
     </section>
@@ -114,34 +235,35 @@ export function AtelierRoom() {
 function RoomLoading() {
   return (
     <div className="grid h-full place-items-center bg-[#090806] font-code-label text-code-label text-amber-200">
-      마을을 불러오는 중
+      섬을 불러오는 중
     </div>
   );
 }
 
 function Scene() {
-  const [worldMode, setWorldMode] = useState<"village" | "interior">("village");
+  const [worldMode, setWorldMode] = useState<WorldMode>("island");
   const isInterior = worldMode === "interior";
 
   return (
     <group>
-      <fog attach="fog" args={[isInterior ? "#1f1610" : "#1a1d2a", isInterior ? 18 : 30, isInterior ? 56 : 85]} />
-      <color attach="background" args={[isInterior ? "#1f1610" : "#1a1d2a"]} />
-      <hemisphereLight args={[isInterior ? "#ffd8a8" : "#b8c8d6", isInterior ? "#3a2418" : "#3a2a1f", isInterior ? 1.7 : 1.4]} />
-      <ambientLight intensity={isInterior ? 1.0 : 0.8} />
-      <directionalLight position={[10, 20, 8]} intensity={isInterior ? 0.8 : 2.2} color={isInterior ? "#ffd8a8" : "#ffffff"} />
-      <directionalLight position={[-12, 14, -6]} intensity={isInterior ? 1.1 : 1.0} color="#ffd9a3" />
-      <Ground worldMode={worldMode} />
+      <fog attach="fog" args={[isInterior ? "#1f1610" : "#9ed6f5", isInterior ? 18 : 38, isInterior ? 56 : 118]} />
+      <color attach="background" args={[isInterior ? "#1f1610" : "#87c9ef"]} />
+      <hemisphereLight args={[isInterior ? "#ffd8a8" : "#eef9ff", isInterior ? "#3a2418" : "#4b6c61", isInterior ? 1.7 : 1.65]} />
+      <ambientLight intensity={isInterior ? 1.0 : 0.92} />
+      <directionalLight position={[10, 20, 8]} intensity={isInterior ? 0.8 : 2.35} color={isInterior ? "#ffd8a8" : "#ffffff"} />
+      <directionalLight position={[-12, 14, -6]} intensity={isInterior ? 1.1 : 0.95} color="#ffd9a3" />
+      {worldMode === "island" ? null : <Ground worldMode={worldMode} />}
       {isInterior ? <HouseInterior /> : null}
       <Suspense fallback={null}>
-        {isInterior ? null : <VillageLayout />}
+        {worldMode === "island" ? <IslandWorld /> : null}
+        {worldMode === "village" ? <VillageLayout /> : null}
       </Suspense>
       <Player worldMode={worldMode} onWarp={setWorldMode} />
     </group>
   );
 }
 
-function Ground({ worldMode }: { worldMode: "village" | "interior" }) {
+function Ground({ worldMode }: { worldMode: WorldMode }) {
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
       <planeGeometry args={[PLAZA_HALF * 2, PLAZA_HALF * 2]} />
@@ -157,6 +279,7 @@ interface GlbProps {
   position: [number, number, number];
   rotation?: [number, number, number];
   scale?: number;
+  verticalAlign?: "bottom" | "top";
 }
 
 function GlbModel({ path, position, rotation = [0, 0, 0], scale = 2 }: GlbProps) {
@@ -165,7 +288,13 @@ function GlbModel({ path, position, rotation = [0, 0, 0], scale = 2 }: GlbProps)
   return <primitive object={clone} position={position} rotation={rotation} scale={scale} />;
 }
 
-function NormalizedGlbModel({ path, position, rotation = [0, 0, 0], scale = 1 }: GlbProps) {
+function NormalizedGlbModel({
+  path,
+  position,
+  rotation = [0, 0, 0],
+  scale = 1,
+  verticalAlign = "bottom",
+}: GlbProps) {
   const { scene } = useGLTF(path);
   const { clone, offset } = useMemo(() => {
     const clone = scene.clone(true);
@@ -174,9 +303,13 @@ function NormalizedGlbModel({ path, position, rotation = [0, 0, 0], scale = 1 }:
 
     return {
       clone,
-      offset: new THREE.Vector3(-center.x, -box.min.y, -center.z),
+      offset: new THREE.Vector3(
+        -center.x,
+        verticalAlign === "top" ? -box.max.y : -box.min.y,
+        -center.z,
+      ),
     };
-  }, [scene]);
+  }, [scene, verticalAlign]);
 
   return (
     <group position={position} rotation={rotation} scale={scale}>
@@ -209,6 +342,223 @@ function VillageLayout() {
           <ScatteredRocks />
         </>
       ) : null}
+    </group>
+  );
+}
+
+function IslandWorld() {
+  return (
+    <group>
+      <mesh position={[0, -9.4, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[58, 128]} />
+        <meshStandardMaterial color="#2b9bd4" roughness={0.46} metalness={0.02} transparent opacity={0.72} />
+      </mesh>
+      {BRIDGES.map((bridge) => (
+        <IslandBridge key={`${bridge.from}-${bridge.to}`} bridge={bridge} />
+      ))}
+      {ISLANDS.map((island) => (
+        <IslandLand key={island.id} island={island} />
+      ))}
+    </group>
+  );
+}
+
+function IslandLand({ island }: { island: IslandNode }) {
+  const [x, z] = island.center;
+  const [patchX, patchZ] = island.patchOffset;
+  const [rockX, rockZ] = island.rockOffset;
+
+  return (
+    <group>
+      <Suspense fallback={null}>
+        <NormalizedGlbModel
+          path={HOME_SCENE_ASSETS.island.path}
+          position={[x, 0.14, z]}
+          rotation={[0, island.rotation, 0]}
+          scale={island.modelScale}
+          verticalAlign="top"
+        />
+      </Suspense>
+      <mesh position={[x, 0.02, z]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <circleGeometry args={[island.radius * 0.72, 80]} />
+        <meshStandardMaterial color={island.grass} roughness={0.96} transparent opacity={0.74} />
+      </mesh>
+      <mesh position={[x + patchX, 0.08, z + patchZ]} rotation={[-Math.PI / 2, 0, -0.25]} receiveShadow>
+        <circleGeometry args={[island.patchRadius, 72]} />
+        <meshStandardMaterial color={island.patch} roughness={0.94} transparent opacity={0.62} />
+      </mesh>
+      <IslandAccent island={island} />
+      <mesh position={[x + rockX, 0.34, z + rockZ]}>
+        <dodecahedronGeometry args={[0.72, 0]} />
+        <meshStandardMaterial color="#7a7f76" roughness={0.82} />
+      </mesh>
+    </group>
+  );
+}
+
+function IslandAccent({ island }: { island: IslandNode }) {
+  const [x, z] = island.center;
+
+  if (island.accent === "atelier") {
+    return (
+      <group position={[x, 0.14, z - 1.1]}>
+        <mesh position={[0, 1.15, 0]}>
+          <boxGeometry args={[3.2, 2.3, 2.8]} />
+          <meshStandardMaterial color="#aaa28d" roughness={0.82} />
+        </mesh>
+        <mesh position={[0, 2.65, 0]} rotation={[0, Math.PI / 4, 0]}>
+          <coneGeometry args={[2.45, 2.1, 4]} />
+          <meshStandardMaterial color="#2d6fa5" roughness={0.55} />
+        </mesh>
+        <mesh position={[0, 3.35, 0]}>
+          <cylinderGeometry args={[0.42, 0.55, 2.6, 8]} />
+          <meshStandardMaterial color="#8c836e" roughness={0.82} />
+        </mesh>
+        <mesh position={[0, 4.9, 0]} rotation={[0, Math.PI / 4, 0]}>
+          <coneGeometry args={[0.9, 1.1, 4]} />
+          <meshStandardMaterial color="#2d6fa5" roughness={0.55} />
+        </mesh>
+      </group>
+    );
+  }
+
+  if (island.accent === "farm") {
+    return (
+      <group position={[x - 0.8, 0.15, z]}>
+        <mesh position={[0, 0.62, 0]}>
+          <boxGeometry args={[2.7, 1.25, 2.2]} />
+          <meshStandardMaterial color="#8b613a" roughness={0.8} />
+        </mesh>
+        <mesh position={[0, 1.45, 0]} rotation={[0, Math.PI / 4, 0]}>
+          <coneGeometry args={[1.9, 1.05, 4]} />
+          <meshStandardMaterial color="#2e6ca0" roughness={0.58} />
+        </mesh>
+        <mesh position={[2.1, 0.18, -1.4]}>
+          <boxGeometry args={[2.4, 0.16, 0.8]} />
+          <meshStandardMaterial color="#a88a3d" roughness={0.9} />
+        </mesh>
+      </group>
+    );
+  }
+
+  if (island.accent === "tower") {
+    return (
+      <group position={[x, 0.16, z]}>
+        <mesh position={[0, 1.4, 0]}>
+          <cylinderGeometry args={[0.95, 1.15, 2.8, 10]} />
+          <meshStandardMaterial color="#928977" roughness={0.86} />
+        </mesh>
+        <mesh position={[0, 3.08, 0]}>
+          <coneGeometry args={[1.28, 1.35, 10]} />
+          <meshStandardMaterial color="#516673" roughness={0.7} />
+        </mesh>
+        <SimpleTree position={[3.0, 0, 1.9]} />
+      </group>
+    );
+  }
+
+  if (island.accent === "beach") {
+    return (
+      <group position={[x, 0.12, z]}>
+        <mesh position={[-1.8, 0.65, 0.7]}>
+          <boxGeometry args={[2.4, 1.3, 2]} />
+          <meshStandardMaterial color="#9a6738" roughness={0.78} />
+        </mesh>
+        <mesh position={[-1.8, 1.5, 0.7]} rotation={[0, Math.PI / 4, 0]}>
+          <coneGeometry args={[1.72, 1.0, 4]} />
+          <meshStandardMaterial color="#2d77a6" roughness={0.55} />
+        </mesh>
+        <PalmTree position={[2.6, 0, -1.4]} />
+      </group>
+    );
+  }
+
+  if (island.accent === "snow") {
+    return (
+      <group position={[x, 0.13, z]}>
+        <mesh position={[0, 0.65, 0]}>
+          <boxGeometry args={[2.5, 1.3, 2.2]} />
+          <meshStandardMaterial color="#85633e" roughness={0.78} />
+        </mesh>
+        <mesh position={[0, 1.52, 0]} rotation={[0, Math.PI / 4, 0]}>
+          <coneGeometry args={[1.85, 1.0, 4]} />
+          <meshStandardMaterial color="#dbe4e8" roughness={0.72} />
+        </mesh>
+        <SimpleTree position={[-3.1, 0, -1.6]} />
+      </group>
+    );
+  }
+
+  return (
+    <group position={[x, 0.12, z]}>
+      <mesh position={[0, 0.7, 0]}>
+        <boxGeometry args={[2.5, 1.4, 2.2]} />
+        <meshStandardMaterial color="#9b6338" roughness={0.78} />
+      </mesh>
+      <mesh position={[0, 1.58, 0]} rotation={[0, Math.PI / 4, 0]}>
+        <coneGeometry args={[1.8, 1.1, 4]} />
+        <meshStandardMaterial color="#a24f37" roughness={0.55} />
+      </mesh>
+    </group>
+  );
+}
+
+function PalmTree({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position}>
+      <mesh position={[0, 1.0, 0]} rotation={[0.18, 0, -0.12]}>
+        <cylinderGeometry args={[0.14, 0.22, 2, 8]} />
+        <meshStandardMaterial color="#8b5f3a" roughness={0.78} />
+      </mesh>
+      {[0, Math.PI / 2, Math.PI, Math.PI * 1.5].map((angle) => (
+        <mesh key={`palm-leaf-${angle}`} position={[Math.cos(angle) * 0.45, 2.15, Math.sin(angle) * 0.45]} rotation={[0.55, angle, 0]}>
+          <coneGeometry args={[0.35, 1.4, 8]} />
+          <meshStandardMaterial color="#2f8d59" roughness={0.7} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function IslandBridge({ bridge }: { bridge: { from: string; to: string; width: number } }) {
+  const { start, end } = getBridgeEndpoints(bridge);
+  const dx = end.x - start.x;
+  const dz = end.y - start.y;
+  const length = Math.hypot(dx, dz);
+  const angle = Math.atan2(dx, dz);
+  const plankCount = Math.max(4, Math.floor(length / 1.2));
+
+  return (
+    <group>
+      <mesh
+        position={[(start.x + end.x) / 2, 0.08, (start.y + end.y) / 2]}
+        rotation={[-Math.PI / 2, 0, -angle]}
+        receiveShadow
+      >
+        <boxGeometry args={[bridge.width * 0.78, length, 0.1]} />
+        <meshStandardMaterial color="#8b633f" roughness={0.88} />
+      </mesh>
+      {Array.from({ length: plankCount }, (_, index) => {
+        const t = (index + 0.5) / plankCount;
+        const px = start.x + dx * t;
+        const pz = start.y + dz * t;
+        return (
+          <mesh key={`bridge-plank-${bridge.from}-${bridge.to}-${index}`} position={[px, 0.18, pz]} rotation={[0, angle, 0]}>
+            <boxGeometry args={[bridge.width, 0.08, 0.42]} />
+            <meshStandardMaterial color={index % 2 === 0 ? "#b98755" : "#a9794b"} roughness={0.84} />
+          </mesh>
+        );
+      })}
+      {[-1, 1].map((side) => (
+        <mesh
+          key={`bridge-rope-${bridge.from}-${bridge.to}-${side}`}
+          position={[(start.x + end.x) / 2 + Math.cos(angle) * bridge.width * 0.58 * side, 0.55, (start.y + end.y) / 2 - Math.sin(angle) * bridge.width * 0.58 * side]}
+          rotation={[-Math.PI / 2, 0, -angle]}
+        >
+          <boxGeometry args={[0.08, length, 0.08]} />
+          <meshStandardMaterial color="#6d4a2e" roughness={0.82} />
+        </mesh>
+      ))}
     </group>
   );
 }
@@ -1336,11 +1686,11 @@ function Player({
   worldMode,
   onWarp,
 }: {
-  worldMode: "village" | "interior";
-  onWarp: (mode: "village" | "interior") => void;
+  worldMode: WorldMode;
+  onWarp: (mode: WorldMode) => void;
 }) {
   const groupRef = useRef<THREE.Group>(null);
-  const positionRef = useRef(VILLAGE_SPAWN.clone());
+  const positionRef = useRef(getSpawnPosition(worldMode));
   const yawRef = useRef(0);
   const pitchRef = useRef(0.4);
   const keysRef = useRef<Record<string, boolean>>({});
@@ -1422,17 +1772,11 @@ function Player({
         (-Math.cos(yaw) * forwardInput - Math.sin(yaw) * strafeInput) *
         PLAYER_SPEED *
         delta;
-      const nextX = clamp(
+      const nextPosition = getNextPlayerPosition(
         positionRef.current.x + dx,
-        PLAYER_BOUNDS.minX,
-        PLAYER_BOUNDS.maxX,
-      );
-      const nextZ = clamp(
         positionRef.current.z + dz,
-        PLAYER_BOUNDS.minZ,
-        PLAYER_BOUNDS.maxZ,
+        worldMode,
       );
-      const nextPosition = new THREE.Vector3(nextX, 0, nextZ);
 
       if (!isBlocked(nextPosition, worldMode)) {
         positionRef.current.copy(nextPosition);
@@ -1447,7 +1791,7 @@ function Player({
       }
     }
 
-    if (warpCooldownRef.current === 0) {
+    if (worldMode !== "island" && warpCooldownRef.current === 0) {
       if (
         worldMode === "village" &&
         HOUSE_PORTALS.some((portal) => positionRef.current.distanceTo(portal) < PORTAL_TRIGGER_RADIUS)
@@ -1502,7 +1846,27 @@ function clamp(v: number, min: number, max: number) {
   return Math.max(min, Math.min(max, v));
 }
 
-function isBlocked(position: THREE.Vector3, worldMode: "village" | "interior") {
+function getSpawnPosition(worldMode: WorldMode) {
+  return worldMode === "island" ? ISLAND_SPAWN.clone() : VILLAGE_SPAWN.clone();
+}
+
+function getNextPlayerPosition(x: number, z: number, worldMode: WorldMode) {
+  if (worldMode === "island") {
+    return new THREE.Vector3(x, ISLAND_SPAWN.y, z);
+  }
+
+  return new THREE.Vector3(
+    clamp(x, PLAYER_BOUNDS.minX, PLAYER_BOUNDS.maxX),
+    0,
+    clamp(z, PLAYER_BOUNDS.minZ, PLAYER_BOUNDS.maxZ),
+  );
+}
+
+function isBlocked(position: THREE.Vector3, worldMode: WorldMode) {
+  if (worldMode === "island") {
+    return !isInIslandWorldBounds(position.x, position.z);
+  }
+
   if (worldMode === "interior") {
     return Math.abs(position.x) > 7.4 || position.z < -36.5 || position.z > -23.5;
   }
@@ -1523,6 +1887,66 @@ function isBlocked(position: THREE.Vector3, worldMode: "village" | "interior") {
       Math.abs(point.y - obstacle.center.y) < obstacle.half.y + PLAYER_RADIUS
     );
   });
+}
+
+function isInIslandWorldBounds(x: number, z: number) {
+  return isOnAnyIsland(x, z) || isOnAnyBridge(x, z);
+}
+
+function isOnAnyIsland(x: number, z: number) {
+  return ISLANDS.some((island) => {
+    const dx = x - island.center[0];
+    const dz = z - island.center[1];
+    return Math.hypot(dx, dz) <= island.radius - PLAYER_RADIUS * 0.5;
+  });
+}
+
+function isOnAnyBridge(x: number, z: number) {
+  return BRIDGES.some((bridge) => {
+    const { start, end } = getBridgeEndpoints(bridge);
+    const ax = start.x;
+    const az = start.y;
+    const bx = end.x;
+    const bz = end.y;
+    const vx = bx - ax;
+    const vz = bz - az;
+    const lengthSq = vx * vx + vz * vz;
+    const t = clamp(((x - ax) * vx + (z - az) * vz) / lengthSq, 0, 1);
+    const closestX = ax + vx * t;
+    const closestZ = az + vz * t;
+    const distance = Math.hypot(x - closestX, z - closestZ);
+
+    return distance <= bridge.width / 2 - PLAYER_RADIUS * 0.3;
+  });
+}
+
+function getIslandById(id: string) {
+  const island = ISLANDS.find((candidate) => candidate.id === id);
+  if (!island) {
+    throw new Error(`Unknown island id: ${id}`);
+  }
+  return island;
+}
+
+function getBridgeEndpoints(bridge: { from: string; to: string; width: number }) {
+  const from = getIslandById(bridge.from);
+  const to = getIslandById(bridge.to);
+  const dx = to.center[0] - from.center[0];
+  const dz = to.center[1] - from.center[1];
+  const length = Math.hypot(dx, dz);
+  const ux = dx / length;
+  const uz = dz / length;
+
+  return {
+    start: new THREE.Vector2(
+      from.center[0] + ux * (from.radius - 0.7),
+      from.center[1] + uz * (from.radius - 0.7),
+    ),
+    end: new THREE.Vector2(
+      to.center[0] - ux * (to.radius - 0.7),
+      to.center[1] - uz * (to.radius - 0.7),
+    ),
+  };
 }
 
 // 마을 모델 사전 로딩

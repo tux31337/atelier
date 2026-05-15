@@ -18,8 +18,8 @@ describe("HOME_SCENE_ASSETS", () => {
     expect(fs.existsSync(publicPath)).toBe(true);
   });
 
-  it("keeps the large island model visually subordinate to the playable scene", () => {
-    expect(HOME_SCENE_ASSETS.island.scale).toBeLessThan(1);
-    expect(HOME_SCENE_ASSETS.island.position[1]).toBeGreaterThanOrEqual(0);
+  it("keeps the uploaded island metadata centered for island-first scenes", () => {
+    expect(HOME_SCENE_ASSETS.island.scale).toBeLessThan(0.01);
+    expect(HOME_SCENE_ASSETS.island.position).toEqual([0, 0, 0]);
   });
 });
