@@ -10,6 +10,18 @@ import {
   RotateCw,
   Zap,
 } from "lucide-react";
+import {
+  ComparisonPair,
+  DemoCard,
+  FpsMeter,
+  InputLatencyGraph,
+  ListCallbackScenario,
+  MeasuredRegion,
+  OptimizationToggle,
+  RenderFlash,
+  RenderStats,
+  SortScenario,
+} from "@/components/perf-demo";
 
 type HeadingProps = ComponentPropsWithoutRef<"h2">;
 type ParaProps = ComponentPropsWithoutRef<"p">;
@@ -2032,4 +2044,14 @@ export const mdxComponents = {
   PKIVerificationDiagram,
   TLSHandshake12Diagram,
   TLSHandshake13Diagram,
+  ComparisonPair,
+  DemoCard,
+  OptimizationToggle,
+  MeasuredRegion,
+  RenderStats,
+  RenderFlash,
+  FpsMeter,
+  InputLatencyGraph,
+  SortScenario,
+  ListCallbackScenario,
 };

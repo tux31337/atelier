@@ -1,0 +1,137 @@
+---
+title: "React 성능 훅 1편 — useMemo · useCallback · React.memo"
+date: "2026-05-16"
+category: "Frontend"
+subcategory: "React Performance"
+excerpt: "메모이제이션 3종이 무엇을 줄이고 어디서 새는지 OFF/ON을 나란히 놓고 본다. 시리즈 다음 편으로 useTransition, useDeferredValue, React 19 신훅, React Compiler가 이어진다."
+tags: ["React", "Performance", "Memoization", "Series:React-Perf", "Part-1"]
+draft: false
+---
+
+React로 화면을 만들다 보면 어느 순간 "이거 너무 느린데?" 하는 구간이 생긴다. 입력을 한 글자 칠 때마다 화면 전체가 다시 그려지는 느낌이거나, 무관해 보이는 버튼 하나를 눌렀는데 옆에 있는 리스트가 통째로 깜빡이거나. 보통 그 시점에 누군가 `useMemo`, `useCallback`, `React.memo`를 추천한다.
+
+문제는 이 셋이 정확히 **무엇을 막아주고 어디서 새는지**가 글로만 읽으면 흐릿하다는 점이다. 그래서 이번 글에서는 같은 입력이 OFF/ON 두 패널에 동시에 들어가는 비교 데모를 띄워둔다. 한 번 클릭하면 양쪽이 함께 리렌더되고, 옆에 있는 막대 길이로 commit 시간 차이가 그대로 보인다.
+
+## 리렌더는 정확히 무엇을 다시 하는가
+
+React 컴포넌트가 "리렌더된다"는 말은 세 가지를 의미한다.
+
+1. 함수 컴포넌트의 본문이 다시 실행된다 (JSX 평가, hook 호출, 그 안의 일반 코드 전부).
+2. 반환된 JSX와 이전 트리의 diff를 비교한다.
+3. 차이가 있는 부분만 실제 DOM에 반영한다.
+
+여기서 시간을 가장 많이 잡아먹는 건 보통 1번이다. 무거운 계산이 본문 안에 있으면 매번 다시 한다. 그리고 자식 컴포넌트는 부모가 리렌더되면 **props가 바뀌지 않아도** 일단 한 번 더 호출된다 — props가 바뀌었는지 React는 자동으로 깊이 비교하지 않기 때문이다. 자식 호출을 건너뛰려면 그 자식을 `React.memo`로 감싸야 한다.
+
+이 세 군데가 메모이제이션 3종이 끼어드는 자리다.
+
+- `useMemo`: 본문 안의 무거운 계산을 캐시한다 — 1번에 대한 처방.
+- `React.memo`: 자식 컴포넌트의 props가 얕은 비교상 같으면 호출 자체를 건너뛴다 — 자식 측에서 끼어든다.
+- `useCallback`: 자식에게 콜백 props를 넘길 때 그 참조를 안정화한다 — `React.memo`의 얕은 비교가 콜백 때문에 실패하지 않게 만든다.
+
+## `useMemo` — 무거운 계산을 한 번만
+
+5,000개짜리 배열을 매 리렌더마다 정렬한다고 해보자. 정렬과 아무 상관 없는 상태(아래 데모의 "무관한 카운터")가 바뀔 때마다 부모가 리렌더되고, 본문 안의 정렬도 그대로 다시 돈다.
+
+코드로 보면 두 버전 차이는 이렇다.
+
+```tsx
+// 1. 매 리렌더마다 5,000개를 다시 정렬한다
+function SortPanel() {
+  const sorted = sortItems(ITEMS);
+  return <List items={sorted.slice(0, 5)} />;
+}
+
+// 2. 같은 입력에 대한 결과를 캐시한다
+function SortPanel() {
+  const sorted = useMemo(() => sortItems(ITEMS), []);
+  return <List items={sorted.slice(0, 5)} />;
+}
+```
+
+두 버전 모두 `sorted`를 만들지만, 1번은 매번 비교 함수가 5,000번씩 돌고, 2번은 deps 배열(`[]`)이 바뀌지 않는 한 첫 결과를 그대로 돌려준다. 이게 commit 시간에 어떻게 박히는지 아래 막대로 확인한다.
+
+<DemoCard title="useMemo: 5,000개 정렬" description="무관한 state 변경이 정렬 작업을 다시 시키는가">
+  <ComparisonPair id="sort" driverLabel="무관한 카운터">
+    <SortScenario />
+  </ComparisonPair>
+</DemoCard>
+
+OFF 패널은 카운터 클릭마다 정렬 비교 5,000번이 commit 시간에 그대로 얹힌다. 막대가 길고 색이 빨갛게 가는 게 보일 것이다. ON 패널은 같은 입력에 대한 결과를 캐시해두기 때문에 본문이 다시 실행되어도 `sortItems`는 더 이상 호출되지 않는다. commit 시간이 한 자릿수 ms대로 내려가고 막대는 가늘게 남는다.
+
+여기서 한 가지. `rendered N×` 카운트는 **양쪽 다** 증가한다. `useMemo`는 리렌더 자체를 막아주지 않는다. 본문은 다시 실행되되, 그 안의 무거운 계산만 캐시 결과로 대체된다.
+
+<Callout title="수치는 절대값이 아니라 OFF/ON 차이로 읽는다">
+React Profiler가 측정하는 `actualDuration`은 환경(머신, 브라우저, dev/prod 빌드, 다른 탭의 부하)에 따라 달라진다. 이 데모의 목표는 "최적화 적용 전후의 상대적 변화"를 보는 것이지, 절대 ms를 신뢰하는 게 아니다.
+</Callout>
+
+## `useCallback` + `React.memo` — 자식 100개를 지키는 법
+
+이번엔 자식 컴포넌트 쪽에서 새는 구간을 본다. 부모가 카운터 하나를 들고 있고, 그 밑에 `React.memo`로 감싼 자식 `Row` 100개가 있다. 부모는 자식에게 `onSelect` 콜백을 prop으로 내려준다.
+
+```tsx
+// 1. 매 렌더마다 새 화살표 함수가 prop으로 내려간다
+function Parent() {
+  const [selected, setSelected] = useState(null);
+  return rows.map((row) => (
+    <Row
+      key={row.id}
+      row={row}
+      selected={row.id === selected}
+      onSelect={(id) => setSelected(id)}
+    />
+  ));
+}
+
+// 2. useCallback으로 참조를 안정시키고, Row를 React.memo로 감싼다
+const Row = memo(function Row({ row, selected, onSelect }) { /* ... */ });
+
+function Parent() {
+  const [selected, setSelected] = useState(null);
+  const onSelect = useCallback((id) => setSelected(id), []);
+  return rows.map((row) => (
+    <Row key={row.id} row={row} selected={row.id === selected} onSelect={onSelect} />
+  ));
+}
+```
+
+1번은 부모가 한 번 리렌더될 때마다 `(id) => setSelected(id)`가 새 함수로 만들어진다. `React.memo`로 감싸 봤자 얕은 비교가 매번 실패해서 자식 100개가 전부 다시 호출된다. 2번은 `useCallback`이 같은 함수 참조를 유지해 주고, `React.memo`의 비교가 통과한다.
+
+아래 데모에서 "부모 카운터"를 한 번 눌러보자. OFF 패널은 자식 100개가 동시에 깜빡인다. ON 패널은 그대로다. 그 다음 자식 한 줄의 "select" 버튼을 눌러보면, ON 패널에서는 선택 상태가 바뀐 두 자식(이전 선택, 새 선택)만 깜빡인다.
+
+<DemoCard title="useCallback + React.memo: 자식 100개" description="부모 리렌더가 자식 전부를 깨우는가">
+  <ComparisonPair id="callback" driverLabel="부모 카운터" flash={false}>
+    <ListCallbackScenario />
+  </ComparisonPair>
+</DemoCard>
+
+여기서 한 가지 주의할 게 있다. **`useCallback`만 켜고 자식이 `React.memo`가 아니라면 아무 효과가 없다.** 자식이 prop 비교를 안 하니 안정된 참조든 새 참조든 상관없이 매번 다시 실행된다. `useCallback`은 단독으로 쓰는 hook이 아니라 `React.memo`(또는 다른 prop 참조에 민감한 hook의 deps)와 짝으로 다닌다.
+
+## 흔한 실수
+
+`useMemo`와 `useCallback`을 처음 쓰면 다음 세 가지에서 거의 다 한 번씩은 발이 걸린다.
+
+**1. `React.memo`도 없이 콜백만 안정시키기.** 위에서 언급한 패턴. `useCallback`만 박아두고 자식이 평범한 함수 컴포넌트라면 비용만 들고 효과는 없다.
+
+**2. deps에 매번 새 객체/배열 리터럴을 넣기.**
+
+```tsx
+// 안 좋은 예 — { sort: "asc" }는 매 렌더마다 새 객체다
+const sorted = useMemo(() => sort(items, { sort: "asc" }), [items, { sort: "asc" }]);
+```
+
+deps에 `{ sort: "asc" }`처럼 인라인 리터럴을 두면 매 렌더마다 새 참조라 캐시가 매번 무효화된다. 객체는 컴포넌트 밖이나 별도 `useMemo`로 안정시키든지, 아니면 primitive로 풀어서 deps에 넣어야 한다.
+
+**3. 비교 비용이 작업 비용보다 큰 경우.**
+`useMemo`는 deps 배열을 매번 비교하고, 캐시된 값을 보관한다. 본문 작업이 정말 가벼우면 — 두 숫자를 더하는 정도라면 — 캐시 유지 비용이 본문 실행 비용보다 클 수 있다. "고민되면 측정하고 비교한다"가 정답이지만, 처음 들어가는 자리는 (a) 명백히 무거운 계산, (b) 자식의 prop으로 내려가는 콜백·객체 두 군데다.
+
+## 정리, 그리고 다음 편
+
+메모이제이션 3종의 역할을 한 줄씩 정리한다.
+
+- `useMemo` — 본문 안 무거운 계산을 deps 기준으로 캐시. **commit 시간**을 줄인다.
+- `React.memo` — 자식의 props가 같으면 호출 자체를 건너뛴다. **불필요한 자식 리렌더**를 막는다.
+- `useCallback` — `React.memo`(또는 같은 의도의 비교)와 짝지어 콜백 prop의 참조를 안정시킨다.
+
+위 두 데모에서 모두 `rendered N×`는 OFF/ON 둘 다 증가한다. 메모이제이션 3종은 **리렌더 자체를 막는 도구가 아니라, 리렌더 안에서 다시 하는 일을 줄이는 도구**다. 입력 응답성이 실제로 빨라지는지, 무거운 작업이 동시에 떠 있을 때 입력 지연이 어떻게 달라지는지는 다른 축의 문제다.
+
+다음 2편에서는 `useTransition`과 `useDeferredValue`로 들어간다. 거기서는 commit 시간이 거의 같은데도 입력 응답성이 달라지는 시나리오를 본다. 그 차이를 보여줄 새 데모 위젯(FPS 미터, 입력 지연 그래프)도 이번에 같이 만들어 뒀다.
