@@ -11,7 +11,9 @@ import {
   Zap,
 } from "lucide-react";
 import {
+  BigListFilterScenario,
   ComparisonPair,
+  DeferredSearchScenario,
   DemoCard,
   FpsMeter,
   InputLatencyGraph,
@@ -2054,4 +2056,6 @@ export const mdxComponents = {
   InputLatencyGraph,
   SortScenario,
   ListCallbackScenario,
+  BigListFilterScenario,
+  DeferredSearchScenario,
 };

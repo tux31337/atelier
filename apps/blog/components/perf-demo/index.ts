@@ -15,3 +15,5 @@ export { FpsMeter } from "./fps-meter";
 export { InputLatencyGraph } from "./input-latency-graph";
 export { SortScenario } from "./scenarios/sort-scenario";
 export { ListCallbackScenario } from "./scenarios/list-callback-scenario";
+export { BigListFilterScenario } from "./scenarios/big-list-filter-scenario";
+export { DeferredSearchScenario } from "./scenarios/deferred-search-scenario";
