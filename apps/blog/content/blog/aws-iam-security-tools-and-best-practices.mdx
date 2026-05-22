@@ -1,0 +1,166 @@
+---
+title: "IAM 보안 도구와 모범 사례"
+date: "2026-05-22"
+category: "AWS"
+subcategory: "IAM"
+excerpt: "IAM 섹션을 마무리한다. 계정 수준의 자격 증명 보고서와 사용자 수준의 Access Advisor 사용법을 정리하고, IAM 모범 사례와 전체 구성 요소를 한눈에 요약한다."
+tags: ["AWS", "IAM", "보안 도구", "Credentials Report", "Access Advisor", "모범 사례", "최소 권한"]
+---
+
+IAM 섹션의 마지막이다.  
+IAM이 제공하는 **보안 도구** 두 가지를 콘솔에서 사용해 보고, **모범 사례**와 전체 구성 요소를 한눈에 정리한다.
+
+## 두 가지 보안 도구
+
+하나는 **계정 수준**, 다른 하나는 **사용자 수준**에서 동작한다.
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[820px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-56 border-b border-border px-4 py-3 font-semibold">도구</th>
+        <th className="w-32 border-b border-border px-4 py-3 font-semibold">수준</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">내용</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">자격 증명 보고서<br />(Credentials Report)</td>
+        <td className="border-b border-border px-4 py-3">계정 수준</td>
+        <td className="border-b border-border px-4 py-3">계정의 모든 사용자와 다양한 자격 증명의 상태를 담는다.</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">Access Advisor<br />(액세스 관리자)</td>
+        <td className="px-4 py-3">사용자 수준</td>
+        <td className="px-4 py-3">사용자에게 부여된 서비스 권한과, 각 서비스에 마지막으로 접근한 시각을 보여 준다.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+## 자격 증명 보고서
+
+**자격 증명 보고서(Credentials Report)** 는 **계정 수준**에서 만든다. 왼쪽에서 **자격 증명 보고서(Credential report)** 를 누르고 **Download credential report**를 클릭하면 CSV 파일이 만들어진다.
+
+CSV에는 사용자마다 한 행이 있고(예: 루트 계정, `stephane`), 다음과 같은 항목이 들어 있다.
+
+```text
+자격 증명 보고서(CSV) 주요 항목
+  - 사용자 생성 시기
+  - 비밀번호 활성화 여부 / 마지막 사용 / 마지막 변경
+  - 비밀번호 교체 활성화 시 다음 교체 예정 시기
+  - MFA 활성화 여부
+  - 액세스 키 생성 여부 / 마지막 교체 / 마지막 사용
+  - 인증서 등
+```
+
+예를 들어 루트 계정은 MFA가 켜져 있고 액세스 키는 없는 반면, `stephane`은 MFA가 꺼져 있고 액세스 키가 생성되어 있는 식으로 비교된다. 이 보고서는 **비밀번호를 바꾸지 않거나 계정을 쓰지 않는 사용자**를 찾는 등 보안상 주의가 필요한 사용자를 가려내는 데 유용하다.
+
+## Access Advisor
+
+**Access Advisor(액세스 관리자)** 는 **사용자 수준**에서 동작한다.
+
+```text
+Users > stephane > Access Advisor(액세스 관리자) 탭
+  -> 사용자가 각 서비스에 마지막으로 접근한 시각을 보여 줌
+```
+
+접근한 서비스와 접근하지 않은 서비스가 구분되어 나오고, 특정 서비스를 클릭하면 더 자세히 볼 수 있다.
+
+```text
+접근한 서비스    : IAM, EC2, 리소스 탐색기 등
+접근 안 한 서비스 : Alexa for Business, AWS App2Container 등
+
+EC2 클릭 -> 이 서비스 접근을 허용한 정책(예: 관리자 액세스)이 표시됨
+```
+
+권한 목록이 수십 페이지에 이를 만큼 많아도, 사용자가 **실제로는 일부 서비스에만 접근**한다는 것을 확인할 수 있다. 즉 안 쓰는 권한을 찾아 제거해 **최소 권한**을 세밀하게 맞추는 데 쓴다.
+
+## IAM 모범 사례
+
+- **루트 계정은 AWS 계정을 처음 설정할 때만** 사용하고, 이후에는 쓰지 않는다. 루트 계정과 개인 IAM 계정, 두 개를 갖춘다.
+- **AWS 사용자 1명 = 물리적 사용자 1명.** 친구나 동료가 AWS를 써야 하면 자격 증명을 넘기지 말고 **새 사용자를 생성**한다.
+- **사용자는 그룹에 넣고, 권한은 그룹에** 부여해 보안을 그룹 수준에서 관리한다.
+- **강력한 비밀번호 정책**을 만든다.
+- **MFA를 사용**해 계정을 해커로부터 더 안전하게 보호한다.
+- **AWS 서비스에 권한을 줄 때는 역할(Role)** 을 만들어 쓴다. CLI나 SDK로 AWS를 쓰는 가상 서버 EC2 인스턴스 등이 여기에 해당한다.
+- **CLI·SDK 사용 시 액세스 키**를 만든다. 액세스 키는 비밀번호와 같으니 본인만 알고 있어야 한다.
+- **권한 감사**는 IAM 자격 증명 보고서(Credentials Report)나 Access Advisor로 한다.
+- **IAM 사용자와 액세스 키는 절대 공유하지 않는다.**
+
+## IAM 한눈에 정리
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[820px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-44 border-b border-border px-4 py-3 font-semibold">구성 요소</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">핵심</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">사용자(User)</td>
+        <td className="border-b border-border px-4 py-3">회사 내 실제 물리적 사용자와 매핑된다. AWS 콘솔 비밀번호를 갖는다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">그룹(Group)</td>
+        <td className="border-b border-border px-4 py-3">사용자를 묶는다. 그룹에는 사용자만 들어간다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">정책(Policy)</td>
+        <td className="border-b border-border px-4 py-3">권한을 정의하는 JSON 문서. 사용자나 그룹에 첨부한다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">역할(Role)</td>
+        <td className="border-b border-border px-4 py-3">ID이지만 사람이 아니라 EC2 인스턴스 등 AWS 서비스가 사용한다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">MFA</td>
+        <td className="border-b border-border px-4 py-3">다중 인증으로 계정 보안을 강화한다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">비밀번호 정책</td>
+        <td className="border-b border-border px-4 py-3">길이·문자·만료·재사용 등 비밀번호 요구 사항을 설정한다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">CLI / SDK</td>
+        <td className="border-b border-border px-4 py-3">커맨드라인 또는 프로그래밍 언어로 AWS 서비스를 관리한다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">액세스 키</td>
+        <td className="border-b border-border px-4 py-3">CLI·SDK 접근에 쓰는 자격 증명. 비밀번호처럼 비밀로 한다.</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">감사 도구</td>
+        <td className="px-4 py-3">IAM 자격 증명 보고서와 Access Advisor로 IAM 사용을 감사한다.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+## 정리
+
+```text
+보안 도구
+  자격 증명 보고서 -> 계정 수준, 모든 사용자·자격 증명 상태(CSV)
+  Access Advisor  -> 사용자 수준, 서비스별 마지막 접근 시각 -> 안 쓰는 권한 제거
+
+모범 사례
+  -> 루트는 설정 시에만, 1인 1사용자, 그룹에 사용자/권한
+  -> 강력한 비밀번호 정책 + MFA, 서비스 권한은 Role
+  -> 액세스 키는 비밀, 사용자·키 공유 금지, 감사 도구로 점검
+
+IAM 구성 요소
+  -> 사용자 / 그룹 / 정책 / 역할
+  -> 보호: MFA, 비밀번호 정책 / 접근: CLI, SDK, 액세스 키 / 감사: 보고서, Access Advisor
+```
+
+## IAM 시리즈 전체 목차
+
+1. [IAM 기초: 사용자, 그룹, 정책 개관과 생성 실습](/blog/aws-iam-users-and-groups)
+2. [IAM 정책: 구조·상속과 권한 실습](/blog/aws-iam-policies)
+3. [IAM 계정 보호: 비밀번호 정책과 MFA](/blog/aws-iam-password-policy-and-mfa)
+4. [AWS 액세스: 콘솔·CLI·SDK와 CloudShell](/blog/aws-iam-cli-sdk-cloudshell)
+5. [IAM Role: 개념과 생성 실습](/blog/aws-iam-roles)
+6. IAM 보안 도구와 모범 사례 (이 글)

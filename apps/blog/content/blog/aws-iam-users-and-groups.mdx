@@ -1,0 +1,242 @@
+---
+title: "IAM 기초: 사용자, 그룹, 정책 개관과 생성 실습"
+date: "2026-05-22"
+category: "AWS"
+subcategory: "IAM"
+excerpt: "AWS를 본격적으로 다루는 첫 주제 IAM의 기본 개념(루트 계정, 사용자와 그룹, 정책, 최소 권한)을 정리하고, 이어서 콘솔에서 IAM 사용자를 만들고 admin 그룹으로 권한을 부여하는 과정까지 실습한다."
+tags: ["AWS", "IAM", "사용자", "그룹", "IAM 정책", "최소 권한", "AdministratorAccess"]
+---
+
+IAM은 AWS를 본격적으로 다룰 때 가장 먼저 만나는 서비스다.  
+계정에 누가 접근하고 어떤 작업을 할 수 있는지를 정하는, 사용자와 권한 관리의 기반이기 때문이다.
+
+이번 글에서는 IAM의 전체 그림(사용자·그룹·정책·최소 권한)을 잡고, 이어서 콘솔에서 직접 사용자와 그룹을 만들어 본다.
+
+## IAM이란 무엇인가
+
+**IAM**은 Identity and Access Management의 약자다.  
+IAM에서는 사용자를 생성하고 그룹에 배치한다.
+
+IAM은 특정 리전에 종속되지 않는 **글로벌 서비스**다. 한 번 만든 사용자와 그룹은 모든 리전에서 동일하게 적용된다.
+
+## 루트 계정
+
+계정을 처음 만들면 **루트 계정(root)** 이 기본으로 생성된다. 우리 계정의 루트 사용자가 되는 것이다.
+
+루트 계정은 **계정을 생성할 때만** 사용해야 한다.  
+그 후에는 루트 계정을 더 이상 사용해서도, 공유해서도 안 된다.
+
+```text
+루트 계정
+  -> 계정 생성 시 자동 생성
+  -> 계정을 만들 때만 사용
+  -> 이후에는 사용 금지, 공유 금지
+  -> 대신 IAM 사용자를 만들어 사용
+```
+
+일상적인 작업은 루트 계정 대신 IAM 사용자를 생성해서 처리한다.
+
+## 사용자와 그룹
+
+하나의 **사용자**는 조직 내의 한 사람에 해당한다.  
+필요하면 사용자들을 **그룹**으로 묶을 수 있다.
+
+예를 들어 Alice, Bob, Charles는 모두 개발자이므로 `Developers` 그룹으로 묶고, 함께 일하는 David와 Edward는 `Operations` 그룹으로 묶는다.
+
+그룹을 다룰 때 기억해야 할 규칙은 다음과 같다.
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[760px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-64 border-b border-border px-4 py-3 font-semibold">규칙</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">설명</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">그룹에는 사용자만</td>
+        <td className="border-b border-border px-4 py-3">그룹에는 오직 사용자만 배치할 수 있다. 그룹 안에 다른 그룹을 포함시킬 수 없다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">그룹 미소속 가능</td>
+        <td className="border-b border-border px-4 py-3">어느 그룹에도 속하지 않는 사용자도 있을 수 있다. 단, 권장하는 방법은 아니다.</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">다중 그룹 소속 가능</td>
+        <td className="px-4 py-3">한 사용자가 여러 그룹에 동시에 속할 수 있다.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+다중 소속 예시를 보면 이해가 쉽다. Charles와 David가 감사 팀에서도 함께 일한다면 `Audit` 그룹을 따로 만들고, 두 사람은 기존 그룹과 `Audit`에 동시에 속하게 된다.
+
+```text
+Developers : Alice, Bob, Charles
+Operations : David, Edward
+Audit      : Charles, David   <- Charles는 Developers+Audit, David는 Operations+Audit
+Fred       : 어느 그룹에도 속하지 않음 (가능하지만 비권장)
+```
+
+## IAM 정책(Policy)
+
+사용자와 그룹을 만드는 이유는 이들이 AWS 계정을 사용하도록 허용하기 위해서다.  
+허용을 위해서는 권한을 부여해야 하고, 권한은 **정책(IAM Policy)** 으로 정의한다.
+
+정책은 사용자 또는 그룹에 지정하는 **JSON 문서**다. 특정 사용자 또는 그룹에 속한 사용자들이 어떤 작업에 권한을 가지는지를 설명한다.
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:Describe*",
+        "elasticloadbalancing:Describe*",
+        "cloudwatch:ListMetrics",
+        "cloudwatch:GetMetricStatistics",
+        "cloudwatch:Describe*"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+위 예시는 EC2, Elastic Load Balancing, CloudWatch의 조회(Describe) 작업을 허용한다. 정책의 세부 구조(`Version`, `Effect`, `Action`, `Resource`)는 다음 글 **IAM 정책**에서 자세히 다룬다. 지금은 "권한은 JSON 정책으로 정의한다"는 큰 그림만 잡아 두면 된다.
+
+## 최소 권한의 원칙
+
+AWS는 모든 사용자에게 모든 것을 허용하지 않는다. 새 사용자가 너무 많은 서비스를 실행하면 큰 비용이 발생하거나 보안 문제를 일으킬 수 있기 때문이다.
+
+그래서 AWS는 **최소 권한의 원칙(Least Privilege)** 을 적용한다.  
+사용자가 꼭 필요로 하는 것 이상의 권한을 주지 않는 것이다. 사용자가 세 개의 서비스에 접근해야 한다면 딱 그 세 개에 대한 권한만 부여한다.
+
+---
+
+여기까지가 개념이다. 이제 콘솔에서 직접 사용자와 그룹을 만들어 본다.
+
+## IAM 사용자 생성
+
+검색창에서 **IAM**을 눌러 콘솔로 들어간 뒤 왼쪽에서 **Users**를 클릭한다. 사용자를 만드는 이유는 지금 우리가 **루트 사용자**로 접속해 있기 때문이다. 오른쪽 상단에 **계정 ID만** 보인다면 루트 계정을 쓰고 있다는 뜻이다. 계정을 더 안전하게 쓰기 위해 **관리자 사용자**를 만든다.
+
+사용자 이름을 입력한다(예: `Stephane`). 그다음 관리 콘솔 접근을 허용하는 방법을 고른다.
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[760px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-56 border-b border-border px-4 py-3 font-semibold">방법</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">설명</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">Identity Center</td>
+        <td className="border-b border-border px-4 py-3">AWS가 추천하는 방법이다.</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">IAM 사용자 생성</td>
+        <td className="px-4 py-3">더 간단하다. 시험 관점에서도 알아 둬야 한다. 이 실습에서는 이 방법을 쓴다.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+다음은 비밀번호 설정이다.
+
+```text
+다른 사람용 계정이라면
+  -> 비밀번호 자동 생성
+  -> "다음 로그인 시 비밀번호 변경" 체크
+내 계정이라면
+  -> 사용자 정의 비밀번호 입력
+  -> "다음 로그인 시 비밀번호 변경" 해제
+```
+
+## 그룹으로 권한 부여
+
+`Next`를 누르면 권한을 추가한다. 권한은 사용자에게 직접 붙일 수도 있지만, 여기서는 **그룹**으로 시작한다.
+
+그룹을 새로 만든다. 그룹 이름은 `admin`, 붙일 정책은 **AdministratorAccess(관리자 액세스)** 다. 그룹을 만든 뒤 사용자를 `admin` 그룹에 추가한다.
+
+`Next`로 검토 화면에서 사용자 이름, 그룹을 통한 권한, 태그를 확인한다.
+
+## 태그
+
+**태그(Tag)** 는 AWS 어디에나 있는 선택적 메타데이터다. 리소스에 부가 정보를 붙일 수 있다. 예를 들어 사용자에게 `department = 기술부` 같은 태그를 달 수 있다.
+
+사용자를 생성하면 로그인 방법을 **이메일**로 받거나 **CSV 파일**로 내려받을 수 있다.
+
+## 권한 상속 확인
+
+사용자 목록과 **User groups**에서 결과를 확인한다.
+
+- `admin` 그룹에는 사용자 한 명(`Stephane`)이 속해 있다.
+- `admin` 그룹에는 **AdministratorAccess**가 붙어 있다.
+- 사용자 `Stephane`의 권한 정책에도 AdministratorAccess가 보이지만, **직접 첨부된 것이 아니라 `admin` 그룹을 통해** 붙은 것이다.
+
+```text
+admin 그룹 (AdministratorAccess)
+  -> Stephane 은 admin 그룹의 모든 권한을 상속받는다
+```
+
+즉 사용자는 자신이 속한 그룹의 권한을 그대로 이어받는다.  
+이렇게 그룹 단위로 권한을 관리하는 편이 사용자마다 정책을 붙이는 것보다 간단하다. **이것이 사용자를 그룹에 넣는 이유**다.
+
+## 계정 별칭과 로그인 URL
+
+대시보드의 **AWS 계정**에는 계정 ID와 로그인 URL이 있다. 로그인 URL은 **계정 별칭(account alias)** 으로 간단하게 바꿀 수 있다.
+
+별칭(예: `aws-stephane-v3`)을 정하고 생성하면 로그인 URL이 짧아진다. 단, 별칭은 **전 세계에서 고유**해야 하므로 이미 쓰인 이름은 사용할 수 없다.
+
+## IAM 사용자로 로그인
+
+만든 `Stephane` 사용자로 로그인해 본다. 같은 브라우저로 로그인하면 기존(루트) 세션 연결이 끊긴다. 그래서 **비공개 모드(시크릿 창)** 로 새 창을 열면 루트 계정과 IAM 사용자를 나란히 띄워 둘 수 있다.
+
+AWS 로그인 화면에는 **루트 사용자 로그인**과 **IAM 사용자 로그인**이 따로 있다. IAM 사용자 로그인을 누르고 계정 ID 또는 계정 별칭을 입력한 뒤, IAM 사용자 이름(`Stephane`)과 비밀번호로 로그인한다.
+
+오른쪽 상단 표시로 어떤 신분인지 구분할 수 있다.
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[760px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-44 border-b border-border px-4 py-3 font-semibold">로그인 신분</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">오른쪽 상단 표시</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">루트 계정</td>
+        <td className="border-b border-border px-4 py-3">계정 ID만 표시된다.</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">IAM 사용자</td>
+        <td className="px-4 py-3">계정 ID와 함께 사용자 이름·"IAM 사용자"가 표시된다.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+루트 계정 로그인과 관리자(IAM 사용자) 로그인 정보를 **잃어버리지 않도록** 주의한다. 둘 다 잃으면 계정에 큰 문제가 생기고 AWS 지원에 연락해야 한다. 강의 관점에서는 루트 사용자 대신 **IAM 사용자 사용을 권장**한다.
+
+## 정리
+
+```text
+[개념]
+IAM       -> 사용자 생성 + 그룹 배치를 담당하는 글로벌 서비스
+루트 계정  -> 계정 생성 시에만 사용, 이후 사용·공유 금지
+그룹      -> 사용자만 포함(그룹 안에 그룹 불가), 미소속 가능(비권장), 다중 소속 가능
+정책      -> 권한을 정의하는 JSON 문서, 사용자/그룹에 부여
+최소 권한  -> 꼭 필요한 권한만 부여
+
+[실습]
+사용자 생성 -> 콘솔 접근: Identity Center(권장) 또는 IAM 사용자(간단·시험용)
+           비밀번호: 자동 생성+변경 강제 / 사용자 정의
+권한 부여  -> admin 그룹 + AdministratorAccess, 사용자는 그룹 권한을 상속
+태그      -> 선택적 메타데이터 (예: department=기술부)
+로그인    -> 계정 별칭으로 URL 간소화, 루트/IAM 사용자 로그인 구분, 비공개 모드로 동시 사용
+```

@@ -1,0 +1,199 @@
+---
+title: "AWS 액세스: 콘솔·CLI·SDK와 CloudShell"
+date: "2026-05-22"
+category: "AWS"
+subcategory: "IAM"
+excerpt: "AWS에 접근하는 세 가지 방법(콘솔·CLI·SDK)과 이를 보호하는 액세스 키를 정리하고, 액세스 키로 AWS CLI를 구성·실행하는 실습과 브라우저 터미널 CloudShell까지 다룬다."
+tags: ["AWS", "IAM", "액세스 키", "AWS CLI", "AWS SDK", "CloudShell", "aws configure"]
+---
+
+지금까지는 웹 인터페이스인 **관리 콘솔**로만 AWS에 접근했다.  
+하지만 AWS에 접근하는 방법은 세 가지다. 개념을 정리하고, 액세스 키로 CLI를 구성하는 실습과 브라우저 터미널 CloudShell까지 본다.
+
+## AWS 액세스 3가지 방법
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[820px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-44 border-b border-border px-4 py-3 font-semibold">방법</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">설명</th>
+        <th className="w-56 border-b border-border px-4 py-3 font-semibold">보호 수단</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">관리 콘솔</td>
+        <td className="border-b border-border px-4 py-3">브라우저로 쓰는 웹 인터페이스.</td>
+        <td className="border-b border-border px-4 py-3">사용자 이름 + 비밀번호 + MFA</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">CLI</td>
+        <td className="border-b border-border px-4 py-3">명령줄 셸에서 명령어로 조작. 컴퓨터에 설정한다.</td>
+        <td className="border-b border-border px-4 py-3">액세스 키</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">SDK</td>
+        <td className="px-4 py-3">애플리케이션 코드 안에서 API를 호출.</td>
+        <td className="px-4 py-3">액세스 키</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+CLI와 SDK는 **완전히 동일한 액세스 키**로 보호된다.
+
+## 액세스 키
+
+액세스 키는 **관리 콘솔에서 생성**하며, 사용자가 자신의 키를 직접 관리한다. 키는 비밀번호처럼 비밀이므로 **동료와 공유하면 안 된다**.
+
+```text
+액세스 키 ID    -> 사용자 이름에 해당
+비밀 액세스 키   -> 비밀번호에 해당
+=> 절대 공유 금지, 본인만 보관
+```
+
+이 키를 CLI나 SDK에 설정하면 AWS API에 접근할 수 있다.
+
+## CLI(Command Line Interface)
+
+AWS CLI는 명령줄 셸에서 명령어로 AWS 서비스와 상호작용하는 도구다. 모든 명령어가 `aws`로 시작한다.
+
+```text
+aws s3 cp ...   <- 모든 명령어는 aws 로 시작
+```
+
+특징은 다음과 같다.
+
+- AWS 서비스의 **공용 API에 직접** 접근한다.
+- 리소스를 관리하는 **스크립트로 작업을 자동화**할 수 있다.
+- **오픈 소스**이며 소스 코드는 GitHub에 있다.
+- 관리 콘솔 **대신** 쓰기도 한다.
+
+## SDK(Software Development Kit)
+
+SDK는 **특정 언어로 된 라이브러리의 집합**이다. 프로그래밍 언어마다 개별 SDK가 있으며, 터미널에서 쓰는 것이 아니라 **애플리케이션 코드 안에 심어** API에 접근한다.
+
+```text
+지원 언어 : JavaScript, Python, PHP, .NET, Ruby, Java, Go, Node.js, C++ ...
+모바일 SDK : Android, iOS
+IoT SDK   : 온도 센서 등 사물 인터넷 장치
+```
+
+참고로 **AWS CLI는 Python용 AWS SDK인 Boto(boto3) 위에** 만들어져 있다.
+
+---
+
+이제 액세스 키로 CLI를 직접 구성해 본다.
+
+## 액세스 키 생성
+
+사용자 화면에서 키를 만든다.
+
+```text
+사용자(예: stephane) > Security credentials > 액세스 키 만들기
+```
+
+사용 사례를 고르면 AWS가 대안을 권장한다(CLI는 CloudShell 사용, 또는 CLI v2 + IAM Identity Center 인증). 여기서는 액세스 키 동작을 이해하는 것이 목적이므로 **"권장 사항을 이해했지만 액세스 키를 만들겠다"** 에 체크하고 생성한다.
+
+```text
+중요: 액세스 키 ID와 비밀 액세스 키를 확인·다운로드할 수 있는 시점은 생성 직후 한 번뿐이다.
+      이때 안전하게 보관한다. (비밀번호처럼 공유 금지)
+```
+
+## CLI 구성(aws configure)
+
+터미널에서 `aws configure`로 키와 기본값을 설정한다.
+
+```bash
+aws configure
+```
+
+```text
+AWS Access Key ID      : 액세스 키 ID 입력
+AWS Secret Access Key  : 비밀 액세스 키 입력
+Default region name    : 기본 리전 (예: eu-west-1)
+Default output format  : 기본값이면 엔터
+```
+
+## CLI로 명령 실행
+
+구성이 끝나면 명령을 실행해 본다.
+
+```bash
+aws iam list-users
+```
+
+계정의 모든 사용자가 나열된다. 각 사용자에 대해 **User ID, ARN, 생성 시기(CreateDate), 비밀번호 마지막 사용(PasswordLastUsed)** 같은 정보가 나온다. 관리 콘솔에서 보는 정보와 거의 같다.
+
+## CLI 권한 = 콘솔 권한
+
+CLI의 권한은 IAM에서 부여한 권한과 **완전히 동일**하다. 권한을 빼면 콘솔도 CLI도 똑같이 막힌다.
+
+```text
+admin 그룹에서 stephane 제거
+  -> 콘솔: 새로고침하면 "권한 없음" 오류
+  -> CLI : aws iam list-users 가 거부됨(응답 없음)
+=> CLI 권한은 IAM 콘솔 권한과 같다
+```
+
+확인이 끝나면 **반드시 사용자를 admin 그룹에 다시 추가**해 관리자 권한을 되돌린다.
+
+## CloudShell: 무료 브라우저 터미널
+
+내 컴퓨터의 터미널 대신 쓸 수 있는 대안이 **AWS CloudShell**이다. 액세스 키를 따로 설정하지 않아도 브라우저에서 바로 CLI를 쓸 수 있다.
+
+- AWS 클라우드에서 **무료**로 제공하는 브라우저 기반 터미널. 콘솔 **우측 상단 아이콘**으로 연다.
+- 아이콘이 안 보이면 **지원 리전**인지 확인한다(모든 리전 지원 X, 미지원 리전은 CloudShell FAQ에서 확인). 환경이 켜지는 데 1분 정도 걸릴 수 있다.
+- **AWS CLI v2가 미리 설치**되어 있다(`aws --version`).
+- **자격 증명을 따로 설정할 필요가 없다.** 현재 로그인한 계정의 자격으로 동작하므로 `aws iam list-users` 같은 명령이 바로 작동한다. 리전은 `--region`으로 지정하고, 기본값은 현재 로그인된 리전이다.
+- **영구 저장소**가 있어 환경을 재시작해도 만든 파일이 남는다(예: `echo "test" > demo.txt`).
+
+CloudShell의 편의 기능은 다음과 같다.
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[760px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-40 border-b border-border px-4 py-3 font-semibold">기능</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">설명</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">구성</td>
+        <td className="border-b border-border px-4 py-3">글씨 크기(작게·보통·크게), 라이트/다크 테마, 안전 붙여넣기(Safe Paste)를 설정할 수 있다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">파일 전송</td>
+        <td className="border-b border-border px-4 py-3"><code>Actions</code> 메뉴의 Download file / Upload file로 환경과 파일을 주고받는다.</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">멀티 터미널</td>
+        <td className="px-4 py-3"><code>New tab</code>으로 탭을 추가하고, <code>Split into rows</code>로 화면을 나눠 여러 터미널을 동시에 연결한다.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+CLI는 내 터미널이든 CloudShell이든 무엇으로 써도 된다. 단, 파일 업로드·다운로드는 CloudShell이 편리하다.
+
+## 정리
+
+```text
+[액세스 방법]
+콘솔 -> 웹, 사용자명+비밀번호+MFA
+CLI  -> 명령줄(aws ...), 액세스 키, 공용 API 직접 접근·자동화·오픈 소스
+SDK  -> 앱 코드에 임베드, 언어별 라이브러리, AWS CLI는 Python SDK Boto 기반
+액세스 키 -> 콘솔에서 생성, 키 ID=사용자명 / 비밀 키=비밀번호, 공유 금지
+
+[CLI 실습]
+액세스 키 생성 -> 생성 직후 한 번만 확인 가능
+aws configure -> 키 ID / 비밀 키 / 리전 / 출력 형식
+aws iam list-users -> 콘솔과 같은 정보
+CLI 권한 = IAM 콘솔 권한 (그룹에서 빠지면 둘 다 거부, 실습 후 재추가)
+
+[CloudShell]
+-> 무료 브라우저 터미널, CLI 사전 설치, 지원 리전에서만
+-> 자격 증명 불필요(로그인 계정), 영구 저장소, 파일 전송/멀티 터미널
+```
