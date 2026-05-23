@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { estimateReadingTime, parsePost } from "./posts";
+import { estimateReadingTime, getAllPosts, parsePost } from "./posts";
 
 describe("estimateReadingTime", () => {
   it("returns at least 1 minute for trivial content", () => {
@@ -124,5 +124,26 @@ body
 `;
     const post = parsePost("draft-post", raw);
     expect(post.draft).toBe(true);
+  });
+});
+
+describe("AWS SAA EC2 post metadata", () => {
+  const topicTagsBySlug: Record<string, string> = {
+    "aws-ec2-costs-and-iam-role": "EC2",
+    "aws-ec2-first-website": "EC2",
+    "aws-ec2-purchasing-options-and-spot": "EC2",
+    "aws-ec2-security-groups": "EC2",
+  };
+
+  it("uses certification and EC2 topic tags consistently", () => {
+    const postsBySlug = new Map(getAllPosts().map((post) => [post.slug, post]));
+
+    for (const [slug, topicTag] of Object.entries(topicTagsBySlug)) {
+      const post = postsBySlug.get(slug);
+      expect(post).toBeDefined();
+      expect(post?.category).toBe("자격증");
+      expect(post?.subcategory).toBe("AWS SAA");
+      expect(post?.tags).toEqual(expect.arrayContaining(["AWS", "AWS SAA", topicTag]));
+    }
   });
 });

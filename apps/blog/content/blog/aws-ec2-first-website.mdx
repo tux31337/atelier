@@ -1,0 +1,216 @@
+---
+title: "EC2 기초: 첫 인스턴스, AMI, User Data, 인스턴스 타입"
+date: "2026-05-23"
+category: "자격증"
+subcategory: "AWS SAA"
+excerpt: "AWS SAA에 필요한 EC2 기초를 첫 인스턴스 생성 흐름으로 정리한다. AMI, 키 페어, User Data, 인스턴스 상태, 인스턴스 타입 명명 규칙과 주요 유형만 집중해서 본다."
+tags: ["AWS", "AWS SAA", "EC2", "AMI", "키 페어", "User Data", "인스턴스 타입", "Amazon Linux"]
+---
+
+EC2는 AWS에서 가장 기본이 되는 컴퓨팅 서비스다.
+SAA에서는 EC2를 "가상 서버"라고만 외우는 것보다 **첫 인스턴스를 만들 때 어떤 선택을 하고, 부팅 자동화와 인스턴스 상태를 어떻게 이해하며, 워크로드에 맞는 인스턴스 타입을 어떻게 고르는지**가 중요하다.
+
+이 글은 EC2 첫 실습의 기본 흐름만 다룬다.
+보안 그룹의 인바운드·아웃바운드 규칙은 [EC2 보안 그룹 글](/blog/aws-ec2-security-groups)에서, 비용과 IAM Role은 [EC2 비용과 IAM Role 글](/blog/aws-ec2-costs-and-iam-role)에서 따로 정리한다.
+
+## EC2란 무엇인가
+
+**EC2**는 Elastic Compute Cloud의 약자다.
+AWS에서 필요한 만큼 가상 서버를 빌려 쓰는 대표적인 IaaS 서비스다.
+
+EC2 인스턴스는 사용자가 고르는 AMI, 인스턴스 타입, 네트워크, 키 페어, 초기화 스크립트 조합으로 만들어진다.
+따라서 시험에서는 "EC2는 서버"라는 정의보다 인스턴스를 만들 때 선택하는 항목의 의미를 구분하는 것이 중요하다.
+
+```text
+EC2 인스턴스
+  -> AMI: 운영 체제와 기본 소프트웨어 이미지
+  -> 인스턴스 타입: vCPU, 메모리, 네트워크 성능 조합
+  -> 키 페어: Linux SSH 접속용 키
+  -> User Data: 최초 부팅 자동화 스크립트
+```
+
+## 첫 인스턴스에서 선택하는 것
+
+EC2 콘솔에서 `Instances`로 이동한 뒤 `Launch instances`를 선택하면 인스턴스 생성 화면이 열린다.
+첫 실습에서는 이름을 `My First Instance`처럼 지정한다.
+이 이름은 실제로는 `Name` 태그로 저장되며, 콘솔에서 인스턴스를 식별하는 데 사용한다.
+
+처음 봐야 할 선택지는 다음 네 가지다.
+
+- **AMI**: Amazon Linux, Ubuntu, Windows처럼 인스턴스의 기본 이미지를 고른다.
+- **인스턴스 타입**: `t2.micro`, `t3.micro`처럼 CPU와 메모리 크기를 고른다.
+- **키 페어**: Linux 인스턴스에 SSH로 접속할 때 사용할 개인 키를 만든다.
+- **User Data**: 인스턴스가 처음 켜질 때 실행할 초기화 명령을 넣는다.
+
+네트워크, 스토리지, 보안 그룹도 인스턴스 생성 화면에 함께 나오지만, 이 글에서는 첫 웹 서버가 동작하는 데 필요한 최소 연결만 언급한다.
+보안 그룹 규칙 자체는 별도 글에서 자세히 본다.
+
+## AMI는 인스턴스의 시작 이미지다
+
+AMI는 Amazon Machine Image의 약자다.
+운영 체제와 기본 소프트웨어 상태를 담은 이미지이며, EC2 인스턴스는 AMI를 기준으로 시작된다.
+
+첫 실습에서는 보통 Amazon Linux 계열 AMI를 사용한다.
+강의나 콘솔 시점에 따라 Amazon Linux 2 또는 Amazon Linux 2023이 보일 수 있다.
+시험에서는 특정 화면보다 **AMI는 인스턴스의 OS 이미지**라는 개념을 우선 기억한다.
+
+AMI는 직접 만들 수도 있다.
+이미 설정을 끝낸 인스턴스에서 AMI를 만들면, 같은 상태의 새 인스턴스를 반복해서 시작할 수 있다.
+
+## 인스턴스 타입은 서버 크기다
+
+인스턴스 타입은 vCPU, 메모리, 네트워크 성능, 스토리지 특성의 조합이다.
+첫 실습에서는 작은 범용 인스턴스인 `t2.micro`나 `t3.micro`가 자주 등장한다.
+
+프리 티어 예시가 어떤 타입으로 보이는지는 리전, 계정, 콘솔 변경에 따라 달라질 수 있다.
+따라서 시험에서는 "프리 티어 실습용으로 작은 범용 인스턴스를 고른다"는 흐름을 잡으면 된다.
+
+인스턴스 타입 이름은 다음처럼 읽는다.
+
+```text
+m5.2xlarge
+  m       -> 인스턴스 패밀리
+  5       -> 세대
+  2xlarge -> 크기
+```
+
+크기가 커질수록 일반적으로 vCPU, 메모리, 네트워크 성능, EBS 대역폭이 커진다.
+
+## 키 페어는 Linux 접속용이다
+
+Linux EC2 인스턴스에 SSH로 접속하려면 키 페어가 필요하다.
+인스턴스 생성 화면에서 새 키 페어를 만들고 이름을 `EC2 Tutorial`처럼 지정할 수 있다.
+
+키 페어를 만들 때 확인할 항목은 다음과 같다.
+
+- **키 페어 타입**: 일반적으로 `RSA`를 선택한다.
+- **키 파일 형식**: Mac, Linux, Windows 10 이상은 보통 `.pem`을 사용한다.
+- **PuTTY 사용 환경**: 오래된 Windows 환경에서 PuTTY를 쓴다면 `.ppk`를 선택할 수 있다.
+
+<Callout title="키 파일은 다시 받을 수 없다">
+키 페어를 생성하면 개인 키 파일이 한 번 다운로드된다. 이 파일을 잃어버리면 같은 개인 키를 다시 받을 수 없으므로 보관에 주의해야 한다.
+</Callout>
+
+Linux 인스턴스는 보통 SSH 22번 포트로 접속한다.
+Windows 인스턴스는 RDP 3389번 포트를 사용한다.
+포트와 timeout 문제는 보안 그룹 글에서 다시 다룬다.
+
+## User Data는 첫 부팅 자동화다
+
+User Data는 EC2 인스턴스가 처음 시작될 때 실행되는 스크립트다.
+서버가 켜질 때 필요한 준비 작업을 자동으로 실행하는 것을 부트스트래핑이라고 한다.
+
+첫 웹 서버 실습에서는 User Data로 패키지를 업데이트하고, 웹 서버를 설치하고, `index.html`을 만든다.
+
+```bash
+#!/bin/bash
+yum update -y
+yum install -y httpd
+systemctl start httpd
+systemctl enable httpd
+echo "<h1>Hello World from $(hostname -f)</h1>" > /var/www/html/index.html
+```
+
+User Data는 기본적으로 최초 부팅 시 한 번 실행된다.
+인스턴스를 stop/start한다고 같은 스크립트가 자동으로 반복 실행되지는 않는다.
+
+Linux User Data는 보통 root 권한으로 실행된다.
+그래서 `sudo` 없이 패키지 설치나 서비스 시작 명령을 쓸 수 있다.
+
+## 웹 서버 확인은 공용 IPv4와 HTTP로 한다
+
+인스턴스가 `Running` 상태가 되면 상세 화면에서 공용 IPv4 주소를 확인한다.
+브라우저에서는 다음처럼 `http://`를 붙여 접속한다.
+
+```text
+http://<공용 IPv4 주소>
+```
+
+첫 실습의 User Data는 HTTP 웹 서버만 띄운다.
+따라서 `https://`로 접속하면 열리지 않는다.
+
+브라우저가 계속 기다리다가 timeout이 나면 보안 그룹에서 HTTP 80번 포트가 열려 있는지 확인한다.
+반대로 `Connection refused`가 바로 나온다면 웹 서버 프로세스가 실행 중인지 확인한다.
+
+## 인스턴스 상태를 구분한다
+
+EC2 인스턴스는 필요에 따라 시작하고 중지하고 재부팅하고 종료할 수 있다.
+시험에서는 상태 변화가 IP 주소와 비용에 어떤 영향을 주는지 자주 묻는다.
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[760px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-32 border-b border-border px-4 py-3 font-semibold">동작</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">핵심</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">Start</td>
+        <td className="border-b border-border px-4 py-3">중지된 인스턴스를 다시 실행한다. 새 Public IPv4가 붙을 수 있다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">Stop</td>
+        <td className="border-b border-border px-4 py-3">인스턴스를 끄지만 삭제하지 않는다. 컴퓨팅 요금은 멈추지만 남은 리소스 비용은 확인해야 한다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">Reboot</td>
+        <td className="border-b border-border px-4 py-3">같은 인스턴스를 재부팅한다. 일반적으로 Public IPv4와 Private IPv4가 유지된다.</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">Terminate</td>
+        <td className="px-4 py-3">인스턴스를 영구 삭제한다. 루트 EBS는 Delete on termination 설정에 따라 함께 삭제될 수 있다.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+공용 IPv4 주소는 stop/start 후 바뀔 수 있다.
+반면 Private IPv4 주소는 같은 인스턴스에서 유지되는 것이 일반적이다.
+인터넷에서 고정 주소가 필요하면 Elastic IP를 사용할 수 있지만, 비용과 정리 책임이 생긴다.
+
+## 주요 인스턴스 유형은 병목 기준으로 고른다
+
+시험에서는 모든 제품군 이름을 외우기보다 워크로드의 병목을 보고 유형을 고른다.
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[760px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-48 border-b border-border px-4 py-3 font-semibold">유형</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">적합한 워크로드</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">General Purpose</td>
+        <td className="border-b border-border px-4 py-3">웹 서버, 일반 애플리케이션처럼 CPU·메모리·네트워크 균형이 필요한 작업</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">Compute Optimized</td>
+        <td className="border-b border-border px-4 py-3">배치 처리, 미디어 트랜스코딩, HPC, 게임 서버처럼 CPU가 중요한 작업</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">Memory Optimized</td>
+        <td className="border-b border-border px-4 py-3">인메모리 DB, 캐시, BI처럼 RAM이 중요한 작업</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">Storage Optimized</td>
+        <td className="px-4 py-3">로컬 디스크 I/O가 중요한 데이터베이스, 데이터 웨어하우스, 분산 파일 시스템</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+문제에서 CPU가 병목이면 Compute Optimized, 메모리가 병목이면 Memory Optimized, 로컬 스토리지 I/O가 병목이면 Storage Optimized를 고른다.
+
+## 시험 포인트 정리
+
+- EC2는 AWS에서 빌리는 가상 서버이며 대표적인 IaaS 서비스다.
+- AMI는 인스턴스의 운영 체제와 기본 소프트웨어 이미지다.
+- 키 페어의 개인 키 파일은 생성 시 한 번만 다운로드된다.
+- User Data는 인스턴스 최초 부팅 시 실행되는 초기화 스크립트다.
+- Stop은 인스턴스를 보존하고, Terminate는 인스턴스를 삭제한다.
+- stop/start 후 Public IPv4는 바뀔 수 있고 Private IPv4는 유지되는 것이 일반적이다.
+- 인스턴스 타입은 패밀리, 세대, 크기로 읽고 워크로드 병목 기준으로 고른다.

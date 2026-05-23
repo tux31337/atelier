@@ -1,0 +1,376 @@
+---
+title: "EC2 보안 그룹: 인바운드·아웃바운드 규칙과 주요 포트"
+date: "2026-05-23"
+category: "자격증"
+subcategory: "AWS SAA"
+excerpt: "EC2 인스턴스 주변의 방화벽인 보안 그룹을 정리한다. 콘솔에서 인바운드 규칙을 확인하고 HTTP 80 포트를 지웠다가 복구하는 실습, 아웃바운드 규칙, IP 범위와 보안 그룹 참조, 주요 포트까지 묶는다."
+tags: ["AWS", "AWS SAA", "EC2", "보안 그룹", "인바운드", "아웃바운드", "SSH", "HTTP", "HTTPS"]
+---
+
+EC2 보안 그룹(Security Group)은 EC2 인스턴스 주변에 붙는 기본 방화벽이다.
+지난 EC2 첫 인스턴스 실습에서는 SSH 22번 포트와 HTTP 80번 포트를 열어 웹 서버에 접속했다.
+이번 글에서는 그 보안 그룹이 실제로 무엇을 제어하고, 시험에서 어떤 포인트로 나오는지 정리한다.
+
+## 보안 그룹이란 무엇인가
+
+보안 그룹은 EC2 인스턴스의 네트워크 트래픽을 제어하는 방화벽이다.
+정확히는 인스턴스 안에서 실행되는 애플리케이션 방화벽이 아니라, **EC2 인스턴스 외부에 있는 AWS 네트워크 레벨 방화벽**으로 이해하면 된다.
+
+보안 그룹은 다음 트래픽을 제어한다.
+
+- **인바운드 트래픽**: 외부에서 EC2 인스턴스로 들어오는 트래픽
+- **아웃바운드 트래픽**: EC2 인스턴스에서 외부로 나가는 트래픽
+
+예를 들어 내 컴퓨터에서 EC2 인스턴스로 SSH 접속을 하려면, 보안 그룹 인바운드 규칙에서 TCP 22번 포트를 허용해야 한다.
+브라우저에서 EC2 웹 서버에 접속하려면 TCP 80번 포트 또는 443번 포트를 허용해야 한다.
+
+<Callout title="보안 그룹은 허용 규칙만 가진다">
+보안 그룹에는 명시적인 deny 규칙이 없다. 허용된 트래픽만 통과하고, 허용되지 않은 트래픽은 기본적으로 차단된다.
+</Callout>
+
+## 보안 그룹 규칙의 구성 요소
+
+보안 그룹 규칙은 보통 다음 항목으로 구성된다.
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[760px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-40 border-b border-border px-4 py-3 font-semibold">항목</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">의미</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">Type</td>
+        <td className="border-b border-border px-4 py-3">SSH, HTTP, HTTPS, RDP처럼 자주 쓰는 규칙 유형이다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">Protocol</td>
+        <td className="border-b border-border px-4 py-3">TCP, UDP, ICMP 같은 네트워크 프로토콜이다. 웹과 SSH는 보통 TCP를 사용한다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">Port range</td>
+        <td className="border-b border-border px-4 py-3">트래픽을 허용할 포트 번호다. SSH는 22, HTTP는 80, HTTPS는 443이다.</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">Source 또는 Destination</td>
+        <td className="px-4 py-3">인바운드에서는 출발지, 아웃바운드에서는 목적지다. IP 범위 또는 다른 보안 그룹을 지정할 수 있다.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+소스에는 IPv4나 IPv6 범위를 쓸 수 있다.
+예를 들어 `0.0.0.0/0`은 모든 IPv4 주소를 의미하고, `::/0`은 모든 IPv6 주소를 의미한다.
+반대로 특정 한 개의 IPv4만 허용하려면 보통 `203.0.113.10/32`처럼 `/32` CIDR을 사용한다.
+
+## 인바운드와 아웃바운드 기본 동작
+
+보안 그룹의 기본 동작은 시험에 자주 나온다.
+
+```text
+기본 인바운드: 모두 차단
+기본 아웃바운드: 모두 허용
+```
+
+인바운드는 외부에서 인스턴스로 들어오는 트래픽이다.
+새 보안 그룹은 기본적으로 외부에서 들어오는 트래픽을 허용하지 않는다.
+따라서 SSH나 HTTP 접속을 하려면 직접 인바운드 규칙을 추가해야 한다.
+
+아웃바운드는 인스턴스에서 외부로 나가는 트래픽이다.
+기본 보안 그룹 설정에서는 보통 모든 아웃바운드 트래픽이 허용된다.
+그래서 EC2 인스턴스가 패키지를 설치하거나 외부 웹 사이트에 연결을 시작할 수 있다.
+
+<Callout title="보안 그룹은 상태 저장 방화벽이다">
+보안 그룹은 stateful 방화벽이다. 인바운드로 허용된 요청에 대한 응답 트래픽은 별도 아웃바운드 규칙을 열지 않아도 돌아갈 수 있고, 아웃바운드로 시작한 연결의 응답도 자동으로 허용된다.
+</Callout>
+
+## 콘솔에서 보안 그룹 확인하기
+
+EC2 인스턴스를 만든 뒤 인스턴스 상세 화면의 `Security` 탭을 보면, 해당 인스턴스에 연결된 보안 그룹과 인바운드 규칙을 빠르게 확인할 수 있다.
+더 자세히 보려면 왼쪽 메뉴의 `Network & Security` 아래에서 `Security Groups`로 이동한다.
+
+첫 EC2 인스턴스 실습 직후라면 보통 다음 두 종류의 보안 그룹을 볼 수 있다.
+
+- **default 보안 그룹**: 기본 VPC에 기본으로 존재하는 보안 그룹
+- **launch-wizard-1**: 콘솔에서 EC2 인스턴스를 생성할 때 자동으로 만들어진 보안 그룹
+
+인스턴스에 인스턴스 ID가 있듯이, 보안 그룹에도 고유한 보안 그룹 ID가 있다.
+보안 그룹 목록에서 이름, ID, 연결된 VPC, 인바운드 규칙, 아웃바운드 규칙을 확인할 수 있다.
+
+## 인바운드 규칙 실습: HTTP 80 포트
+
+첫 웹 서버 실습에서 `launch-wizard-1` 보안 그룹에는 보통 다음 두 인바운드 규칙이 있다.
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[760px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-32 border-b border-border px-4 py-3 font-semibold">Type</th>
+        <th className="w-28 border-b border-border px-4 py-3 font-semibold">Port</th>
+        <th className="w-44 border-b border-border px-4 py-3 font-semibold">Source</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">의미</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">SSH</td>
+        <td className="border-b border-border px-4 py-3 font-mono">22</td>
+        <td className="border-b border-border px-4 py-3 font-mono">0.0.0.0/0</td>
+        <td className="border-b border-border px-4 py-3">어디서나 Linux 인스턴스에 SSH 접속할 수 있다.</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">HTTP</td>
+        <td className="px-4 py-3 font-mono">80</td>
+        <td className="px-4 py-3 font-mono">0.0.0.0/0</td>
+        <td className="px-4 py-3">어디서나 브라우저로 웹 서버에 접속할 수 있다.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+`0.0.0.0/0`은 `Anywhere - IPv4`를 의미한다.
+즉, 모든 IPv4 주소에서 해당 포트로 접근할 수 있다는 뜻이다.
+
+웹 서버가 `http://<공용 IPv4 주소>`로 열리는 이유는 HTTP 80번 포트 인바운드 규칙이 있기 때문이다.
+이 규칙을 `Edit inbound rules`에서 삭제하고 저장하면, 인스턴스는 계속 실행 중이어도 브라우저 접속은 타임아웃된다.
+
+```text
+HTTP 80 인바운드 규칙 있음
+  -> http://공용IPv4 접속 가능
+
+HTTP 80 인바운드 규칙 삭제
+  -> 브라우저가 계속 기다리다가 timeout
+```
+
+다시 웹 서버에 접속하려면 인바운드 규칙을 추가한다.
+
+```text
+Type: HTTP
+Protocol: TCP
+Port: 80
+Source: Anywhere - IPv4 (0.0.0.0/0)
+```
+
+규칙을 저장한 뒤 브라우저를 새로고침하면 웹 서버가 다시 응답한다.
+이 실습은 보안 그룹이 EC2 앞단에서 포트 접근을 제어한다는 점을 가장 직접적으로 보여 준다.
+
+<Callout title="Timeout이면 보안 그룹부터 확인">
+EC2 인스턴스로 SSH, HTTP 또는 임의 포트 접속을 시도했는데 계속 기다리다가 타임아웃된다면 보안 그룹 인바운드 규칙을 먼저 확인한다. 포트, 프로토콜, 소스 IP 범위가 맞지 않으면 트래픽이 인스턴스에 도달하지 못한다.
+</Callout>
+
+## 인바운드 규칙의 소스 선택
+
+인바운드 규칙을 추가할 때 소스에는 여러 선택지가 있다.
+
+- **Anywhere - IPv4**: `0.0.0.0/0`으로 모든 IPv4 주소를 허용한다.
+- **Anywhere - IPv6**: `::/0`으로 모든 IPv6 주소를 허용한다.
+- **My IP**: 현재 내 공용 IP만 허용한다.
+- **Custom**: 직접 CIDR, 보안 그룹, Prefix list 등을 지정한다.
+
+학습용 웹 서버의 HTTP 80번 포트는 `Anywhere - IPv4`로 열어도 실습 목적상 이해하기 쉽다.
+반면 SSH 22번 포트는 실제 환경에서 `Anywhere`로 열어 두면 위험하다.
+가능하면 `My IP` 또는 제한된 CIDR을 사용한다.
+
+단, `My IP`를 선택했을 때 내 공용 IP가 바뀌면 더 이상 접속할 수 없다.
+집, 회사, 카페, VPN 환경을 바꾸거나 인터넷 제공자가 IP를 바꾸면 SSH 접속이 타임아웃될 수 있으므로, 이때도 보안 그룹 소스를 다시 확인해야 한다.
+
+## 아웃바운드 규칙 확인하기
+
+보안 그룹의 `Outbound rules`도 확인할 수 있다.
+기본 설정에서는 보통 다음 규칙이 있다.
+
+```text
+Type: All traffic
+Protocol: All
+Port: All
+Destination: 0.0.0.0/0
+```
+
+이 규칙은 EC2 인스턴스가 모든 IPv4 목적지로 나가는 트래픽을 시작할 수 있다는 뜻이다.
+그래서 인스턴스에서 패키지를 업데이트하거나, 웹 사이트에 접속하거나, 외부 API를 호출할 수 있다.
+
+아웃바운드 규칙을 제한하는 환경도 있지만, 첫 EC2 실습에서는 기본 아웃바운드 전체 허용을 그대로 두고 인바운드 규칙을 중심으로 이해하면 충분하다.
+
+## 보안 그룹은 EC2 외부에 있다
+
+보안 그룹은 EC2 내부의 운영 체제나 애플리케이션이 아니다.
+AWS 네트워크 레벨에서 EC2 인스턴스 앞단에 붙어 있는 방화벽이다.
+
+그래서 보안 그룹에서 트래픽이 차단되면 EC2 인스턴스는 그 트래픽을 보지도 못한다.
+애플리케이션 로그에도 요청이 남지 않을 수 있다.
+이 점 때문에 접속 문제를 디버깅할 때 다음 구분이 중요하다.
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[760px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-44 border-b border-border px-4 py-3 font-semibold">증상</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">가능성이 높은 원인</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-semibold text-secondary">Timeout</td>
+        <td className="border-b border-border px-4 py-3">보안 그룹, 네트워크 ACL, 라우팅처럼 네트워크 레벨에서 트래픽이 막혔을 가능성이 높다. EC2 인스턴스까지 요청이 도달하지 못했을 수 있다.</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-semibold text-secondary">Connection refused</td>
+        <td className="px-4 py-3">트래픽은 인스턴스까지 도달했지만 해당 포트에서 애플리케이션이 실행 중이 아니거나, OS 내부에서 연결을 거부했을 가능성이 높다.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+웹 서버 실습에서 브라우저가 계속 로딩되다가 타임아웃된다면 보안 그룹에서 HTTP 80번 포트를 열었는지 먼저 확인한다.
+반면 연결 거부가 바로 나온다면 보안 그룹을 통과했지만 웹 서버가 실행되지 않았거나 해당 포트를 리스닝하지 않는 상황일 수 있다.
+
+## 보안 그룹의 연결 관계
+
+보안 그룹과 EC2 인스턴스는 1:1 관계가 아니다.
+하나의 보안 그룹을 여러 EC2 인스턴스에 연결할 수 있고, 하나의 EC2 인스턴스에 여러 보안 그룹을 연결할 수도 있다.
+
+```text
+하나의 보안 그룹 -> 여러 인스턴스에 연결 가능
+하나의 인스턴스 -> 여러 보안 그룹을 연결 가능
+```
+
+또한 보안 그룹은 **리전과 VPC 조합에 속한 리소스**다.
+다른 리전으로 이동하면 같은 보안 그룹을 그대로 쓸 수 없다.
+다른 VPC를 만들었을 때도 그 VPC 안에서 사용할 보안 그룹을 새로 구성해야 한다.
+
+운영 관점에서는 SSH 접근 전용 보안 그룹을 따로 두는 패턴도 자주 쓴다.
+예를 들어 애플리케이션 트래픽용 보안 그룹과 관리자 SSH 접근용 보안 그룹을 분리하면, 어떤 규칙이 어떤 목적을 갖는지 추적하기 쉽다.
+
+## IP 범위로 허용하기
+
+가장 단순한 보안 그룹 규칙은 IP 범위를 기준으로 트래픽을 허용하는 것이다.
+
+예를 들어 내 컴퓨터의 공용 IP만 SSH 접속을 허용하려면 다음처럼 설정한다.
+
+```text
+Type: SSH
+Protocol: TCP
+Port: 22
+Source: 내 공용 IP/32
+```
+
+반대로 HTTP 웹 서버를 인터넷에 공개하려면 다음처럼 설정할 수 있다.
+
+```text
+Type: HTTP
+Protocol: TCP
+Port: 80
+Source: 0.0.0.0/0
+```
+
+`0.0.0.0/0`은 모든 IPv4 주소를 의미하므로 편하지만, SSH 같은 관리 포트에 사용하는 것은 위험하다.
+실습에서는 편의를 위해 SSH를 어디서나 열 수 있지만, 실제 환경에서는 최소한 내 IP로 제한하는 것이 기본이다.
+
+## 다른 보안 그룹을 참조하기
+
+보안 그룹 규칙의 소스에는 IP 주소뿐 아니라 **다른 보안 그룹**도 지정할 수 있다.
+이 기능은 로드 밸런서나 여러 계층의 EC2 인스턴스를 구성할 때 매우 자주 쓰인다.
+
+예를 들어 다음과 같은 구성이 있다고 하자.
+
+```text
+EC2-A
+  보안 그룹: SG-1
+
+EC2-B
+  보안 그룹: SG-2
+
+EC2-C
+  보안 그룹: SG-2
+
+EC2-D
+  보안 그룹: SG-3
+```
+
+이때 `SG-1`의 인바운드 규칙에서 소스로 `SG-2`를 허용하면, `SG-2`가 붙은 EC2-B와 EC2-C는 EC2-A로 접근할 수 있다.
+중요한 점은 EC2-B와 EC2-C의 IP 주소가 무엇인지 직접 적을 필요가 없다는 것이다.
+올바른 보안 그룹이 붙어 있으면 허용된다.
+
+반대로 `SG-3`은 `SG-1`의 인바운드 규칙에서 허용되지 않았으므로, `SG-3`이 붙은 EC2-D는 EC2-A에 접근할 수 없다.
+
+```text
+SG-1 인바운드 규칙
+  Source: SG-2
+  Result: SG-2가 붙은 인스턴스는 허용
+
+SG-3가 붙은 인스턴스
+  Result: 허용 규칙에 없으므로 차단
+```
+
+이 방식은 IP 주소가 바뀌거나 인스턴스 수가 늘어나도 규칙을 계속 고치지 않아도 된다는 장점이 있다.
+로드 밸런서 보안 그룹만 애플리케이션 인스턴스 보안 그룹에 접근하도록 허용하는 패턴도 이 원리로 이해하면 된다.
+
+## 시험에 필요한 주요 포트
+
+AWS SAA 초반 EC2 파트에서는 자주 쓰는 포트 번호도 함께 기억해야 한다.
+
+<div className="my-8 overflow-x-auto rounded-md border border-border bg-surface-container">
+  <table className="w-full min-w-[760px] border-collapse text-left font-blog-content text-base text-on-surface">
+    <thead className="bg-surface-container-high text-secondary">
+      <tr>
+        <th className="w-32 border-b border-border px-4 py-3 font-semibold">포트</th>
+        <th className="w-32 border-b border-border px-4 py-3 font-semibold">프로토콜</th>
+        <th className="border-b border-border px-4 py-3 font-semibold">용도</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-mono text-secondary">21</td>
+        <td className="border-b border-border px-4 py-3 font-semibold">FTP</td>
+        <td className="border-b border-border px-4 py-3">파일 전송 프로토콜이다. 파일 업로드와 다운로드에 사용한다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-mono text-secondary">22</td>
+        <td className="border-b border-border px-4 py-3 font-semibold">SSH</td>
+        <td className="border-b border-border px-4 py-3">Linux EC2 인스턴스에 터미널로 접속할 때 사용한다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-mono text-secondary">22</td>
+        <td className="border-b border-border px-4 py-3 font-semibold">SFTP</td>
+        <td className="border-b border-border px-4 py-3">SSH 기반의 안전한 파일 전송 프로토콜이다. SSH를 사용하므로 22번 포트를 쓴다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-mono text-secondary">80</td>
+        <td className="border-b border-border px-4 py-3 font-semibold">HTTP</td>
+        <td className="border-b border-border px-4 py-3">암호화되지 않은 웹 사이트 접속에 사용한다.</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border px-4 py-3 font-mono text-secondary">443</td>
+        <td className="border-b border-border px-4 py-3 font-semibold">HTTPS</td>
+        <td className="border-b border-border px-4 py-3">TLS로 암호화된 보안 웹 사이트 접속에 사용한다.</td>
+      </tr>
+      <tr>
+        <td className="px-4 py-3 font-mono text-secondary">3389</td>
+        <td className="px-4 py-3 font-semibold">RDP</td>
+        <td className="px-4 py-3">Windows EC2 인스턴스에 원격 데스크톱으로 접속할 때 사용한다.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+가장 기본적인 구분은 다음과 같다.
+
+```text
+Linux 인스턴스 접속: SSH 22
+Windows 인스턴스 접속: RDP 3389
+웹 서버 HTTP: 80
+웹 서버 HTTPS: 443
+```
+
+## 시험 포인트 정리
+
+- 보안 그룹은 EC2 인스턴스 주변의 **네트워크 방화벽**이다.
+- 보안 그룹은 **허용 규칙만** 가진다.
+- 기본 인바운드 트래픽은 차단된다.
+- 기본 아웃바운드 트래픽은 허용된다.
+- 웹 서버 접속이 되려면 HTTP 80번 포트 인바운드 규칙이 필요하다.
+- 타임아웃은 보안 그룹, 네트워크 ACL, 라우팅 같은 네트워크 레벨 차단 가능성이 높다.
+- 다른 보안 그룹을 소스로 참조하면 인스턴스 IP를 직접 관리하지 않아도 된다.
+- Linux 접속은 SSH 22, Windows 접속은 RDP 3389, 웹 접속은 HTTP 80 또는 HTTPS 443을 먼저 연결한다.
